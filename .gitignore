@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Experiment outputs (keep directory placeholders)
+outputs/**
+!outputs/**/.gitkeep
+outputs/cache/**
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local env
+.env
+*.log

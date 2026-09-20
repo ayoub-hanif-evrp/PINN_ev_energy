@@ -1,0 +1,63 @@
+# Renault Twizy longitudinal energy-model parameters
+#
+# IMPORTANT: Values tagged "not measured" are literature estimates or modelling
+# assumptions. They are NOT HELECAR-D onboard measurements. Do not describe them
+# as experimentally identified from this dataset.
+#
+# Main paper capacity is 6.0 kWh as specified by the HELECAR-D data descriptor
+# (approximate). Manufacturer nominal energy is 6.1 kWh.
+
+battery_capacity_kwh: 6.0
+# Provenance: HELECAR-D Data in Brief (~6 kWh). Renault press kit / NaitMalek
+# et al. 2022 Table 2 list 6.1 kWh. Uncertain usable vs gross. Sensitivity later:
+# 5.5 / 6.0 / 6.5 kWh.
+
+mass_kg: 549.0
+# Provenance: Renault kerb weight 474 kg (press kit 2018) PLUS assumed 75 kg
+# occupant. Max payload is 75 kg; actual driver/payload is unknown. Uncertain.
+
+Crr: 0.012
+# Provenance: typical radial-tyre rolling-resistance coefficient used in EV
+# longitudinal models. NOT measured on the HELECAR Twizy or its tyres/road.
+
+cd: 0.64
+# Provenance: Renault press kit lists "Drag co-efficient (SCx/Cd) = 0.64".
+# Independent databases also list Cx = 0.64. The SCx vs Cd labelling is
+# ambiguous. Treated here as Cd (dimensionless). Major uncertainty.
+
+frontal_area_m2: 1.20
+# Provenance: estimate, NOT measured. Vehicle width x height ≈ 1.237 m x 1.454 m
+# = 1.80 m² if treated as a solid rectangle; the cabin is open so effective area
+# is smaller. 1.20 m² is an assumption. CdA = cd * frontal_area_m2 is therefore
+# a first-order uncertain quantity (sensitivity later).
+
+rho_air: 1.225
+# Provenance: ISA sea-level air density at 15 °C (kg/m³). Not local weather
+# adjusted. Temperature is an ML covariate, not used to recompute rho by default.
+
+eta_drive: 0.85
+# Provenance: typical combined motor+inverter+gear efficiency, NOT a Twizy
+# efficiency map. NaitMalek et al. 2022 mention an efficiency map but do not
+# publish the numerical map used here. Uncertain.
+
+eta_regen: 0.40
+# Provenance: modelling assumption. Stock Twizy regenerative braking is widely
+# reported as weak (community/OVMS documentation). NOT measured on HELECAR-D.
+# Uncertain. Optional fold-wise calibration later may adjust this on TRAIN trips
+# only.
+
+auxiliary_power_kw: 0.20
+# Provenance: constant P_aux assumption following NaitMalek et al. 2022 (12 V
+# auxiliary battery charged from the traction battery while the key is on).
+# Numerical value is NOT published as a HELECAR measurement. Uncertain.
+
+maximum_traction_power_kw: 13.0
+# Provenance: Renault maximum motor power 13 kW (17 hp). HELECAR-D text also
+# mentions 12 kW. Bound for numerical safety, not a fitted limiter.
+
+maximum_regen_power_kw: 8.0
+# Provenance: bound only, NOT measured. Prevents unbounded negative battery
+# power in the analytical model.
+
+g: 9.80665
+# Standard gravity (m/s²).

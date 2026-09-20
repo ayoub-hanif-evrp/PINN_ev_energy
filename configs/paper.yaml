@@ -1,0 +1,14 @@
+extends: base.yaml
+
+experiment:
+  profile: paper
+  seed: 0
+  seeds: [0, 1, 2, 3, 4]
+
+training:
+  max_epochs: 2000
+  early_stopping_patience: 150
+  lambda_physics_grid: [0.001, 0.01, 0.1, 1.0]
+
+scarcity:
+  n_subset_repeats: 5

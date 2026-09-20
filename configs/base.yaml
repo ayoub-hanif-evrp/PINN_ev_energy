@@ -1,0 +1,137 @@
+# Shared experiment configuration
+# Profiles quick.yaml and paper.yaml extend this file.
+
+project:
+  name: pinn-ev-energy
+  paper_title: "Physics-Informed Neural Network for Electric Vehicle Energy Estimation under Data Scarcity"
+
+paths:
+  project_root: .
+  data_search_roots:
+    - .
+  cache_dir: outputs/cache
+  audit_dir: outputs/data_audit
+  loto_dir: outputs/loto
+  ablation_dir: outputs/ablations
+  scarcity_dir: outputs/scarcity
+  sensitivity_dir: outputs/sensitivity
+  figures_dir: outputs/figures
+  tables_dir: outputs/tables
+
+discovery:
+  prefer_analysed: true
+  skip_dir_names:
+    - .git
+    - .venv
+    - venv
+    - env
+    - outputs
+    - __pycache__
+    - .pytest_cache
+    - .mypy_cache
+    - node_modules
+    - .eggs
+    - dist
+    - build
+    - tests
+    - test
+  expected_analysed_columns:
+    - Date
+    - Time
+    - SoC
+    - Speed
+    - Mode
+    - LAT
+    - LON
+    - ALT
+    - GpsSpeed
+    - Temperature
+    - Humidity
+    - Weather
+    - WindSpeedAv
+    - Traffic
+    - SpeedLimit
+  raw_indicator_columns:
+    - ExactSpeed
+    - Odometer
+    - WindDirection
+    - Pressure
+    - Id
+    - Data
+
+vehicle:
+  config: configs/vehicle_twizy.yaml
+
+preprocessing:
+  primary_speed: can  # can | gps  (gps is QC-only unless an experiment overrides)
+  savgol_window: 11
+  savgol_polyorder: 2
+  savgol_sensitivity_windows: [7, 11, 15, 21]
+  altitude_savgol_window: 21
+  altitude_savgol_polyorder: 2
+  grade_spatial_window_m: 40.0
+  grade_ds_min_m: 5.0
+  grade_clip: 0.20  # rise/run; clip only obviously implausible GPS grades
+  timestamp_fallback_dt_s: 1.0
+  cache_processed: true
+
+features:
+  # Main neural-network inputs (later phases). Explicitly excluded: Date, Time, LAT, LON, SoC.
+  main:
+    - speed_mps
+    - acc_mps2
+    - theta_rad
+    - temperature_c
+    - humidity_pct
+    - wind_speed_mps
+    - traffic
+    - speed_limit_mps
+  optional_weather_categorical: true
+  optional_soc_input_ablation: false
+
+windows:
+  soc_event_k: [1, 2, 3]
+  fixed_time_s: [120, 300, 600]
+  min_abs_dsoc_for_fixed: 1.0  # in units of estimated q
+  include_full_trip: true
+  train_overlap: true
+  eval_non_overlapping: true
+  huber_delta_mode: quantization  # quantization | fixed
+  huber_delta_kwh: null  # used if mode == fixed
+  # Event-window starting stride in samples (in addition to SoC-change indices).
+  event_start_stride: 30
+
+physics:
+  use_wind_as_headwind: false  # MUST remain false: no wind direction in analysed data
+  apply_power_bounds: true
+  bound_sharpness: 8.0
+  p_scale_kw: 5.0
+
+experiment:
+  profile: base
+  seed: 0
+  seeds: [0]
+  device: cpu
+
+training:
+  # Used from Phase 6 onward. Stored now so later phases do not invent a schema.
+  optimizer: adam
+  learning_rate: 0.001
+  max_epochs: 2000
+  early_stopping_patience: 150
+  weight_decay: 0.00001
+  hidden_layers: [64, 64, 64]
+  activation: tanh
+  residual_limit_kw: 4.0
+  lambda_energy: 1.0
+  lambda_physics: 0.1
+  lambda_smooth: 0.0
+  lambda_physics_grid: [0.001, 0.01, 0.1, 1.0]
+
+scarcity:
+  n_train_trips: [3, 5, 8, 12, 16]
+  n_subset_repeats_quick: 2
+  n_subset_repeats_paper: 5
+
+feasibility:
+  reserve_soc_pct: [5, 10, 15, 20]
