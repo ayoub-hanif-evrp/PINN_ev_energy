@@ -63,6 +63,42 @@ MAIN_MODEL_FEATURES = (
 
 EXCLUDED_MAIN_PREDICTORS = ("date", "time", "lat", "lon", "soc")
 
+# Trip-level ElasticNet predictors. Explicit whitelist: never include SoC-derived
+# quantities (soc_start/soc_end reveal ΔSOC = start - end).
+ELASTICNET_FEATURES = (
+    "distance_km",
+    "duration_s",
+    "mean_speed_mps",
+    "std_speed_mps",
+    "max_speed_mps",
+    "idle_fraction",
+    "mean_positive_acc",
+    "acc_std",
+    "positive_acc_time_fraction",
+    "braking_time_fraction",
+    "cumulative_elevation_gain_m",
+    "cumulative_elevation_loss_m",
+    "mean_abs_grade",
+    "mean_temperature_c",
+    "mean_humidity_pct",
+    "mean_wind_speed_mps",
+    "mean_traffic",
+    "traffic_frac_0",
+    "traffic_frac_1",
+    "traffic_frac_2",
+    "mean_speed_limit_kmh",
+)
+
+SOC_LABEL_COLUMNS = (
+    "soc_start",
+    "soc_end",
+    "soc_delta",
+    "soc",
+    "e_obs_kwh",
+)
+
+METADATA_COLUMNS = ("trip_id", "trajectory", "n_rows")
+
 
 def normalize_header(name: str) -> str:
     return "".join(ch for ch in name.strip().lower() if ch.isalnum())

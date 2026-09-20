@@ -127,29 +127,57 @@ def parse_trip_timestamps(frame: pd.DataFrame, fallback_dt_s: float = 1.0) -> tu
 
 
 def compute_dt_seconds(timestamps: np.ndarray, fallback_dt_s: float = 1.0) -> tuple[np.ndarray, dict[str, Any]]:
+    """Forward interval durations: dt[i] = t[i+1] - t[i]; dt[-1] = 0.
+
+    n timestamps therefore yield n-1 physical intervals.
+    """
     n = len(timestamps)
-    dt = np.full(n, float(fallback_dt_s), dtype=float)
-    stats = {
+    dt = np.zeros(n, dtype=float)
+    stats: dict[str, Any] = {
         "n_nonpositive_dt": 0,
         "n_duplicate_timestamps": 0,
         "n_gaps_gt_2s": 0,
         "fallback_dt_s": float(fallback_dt_s),
+        "n_intervals": max(n - 1, 0),
     }
     if n == 0:
         return dt, stats
     epoch = epoch_seconds(timestamps)
     if n >= 2:
         diffs = np.diff(epoch)
-        dt[1:] = diffs
-        dt[0] = diffs[0] if np.isfinite(diffs[0]) and diffs[0] > 0 else float(fallback_dt_s)
-        stats["n_nonpositive_dt"] = int(np.sum(~(dt > 0)))
-        stats["n_duplicate_timestamps"] = int(np.sum(np.diff(epoch) == 0))
-        stats["n_gaps_gt_2s"] = int(np.sum(np.diff(epoch) > 2.0))
-        bad = ~(dt > 0) | ~np.isfinite(dt)
-        dt[bad] = float(fallback_dt_s)
+        stats["n_duplicate_timestamps"] = int(np.sum(np.abs(diffs) < 1e-12))
+        stats["n_gaps_gt_2s"] = int(np.sum(diffs > 2.0))
+        bad = ~(diffs > 0) | ~np.isfinite(diffs)
+        stats["n_nonpositive_dt"] = int(bad.sum())
+        diffs = np.where(bad, float(fallback_dt_s), diffs)
+        dt[:-1] = diffs
         if bad.any():
             stats["repaired_nonpositive_or_nan_dt"] = int(bad.sum())
+    stats["duration_s"] = float(np.sum(dt))
     return dt, stats
+
+
+def elapsed_seconds(dt_s: np.ndarray) -> np.ndarray:
+    """Sample times from trip start: t[0] = 0, t[i+1] = t[i] + dt[i]."""
+    dt = np.asarray(dt_s, dtype=float)
+    t = np.zeros(len(dt), dtype=float)
+    if len(dt) >= 2:
+        t[1:] = np.cumsum(dt[:-1])
+    return t
+
+
+def trapezoid_path_m(speed_mps: np.ndarray, dt_s: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Prefix distance from trapezoidal speed integration. s[0] = 0."""
+    v = np.asarray(speed_mps, dtype=float)
+    dt = np.asarray(dt_s, dtype=float)
+    n = len(v)
+    ds = np.zeros(n, dtype=float)
+    s = np.zeros(n, dtype=float)
+    if n >= 2:
+        ds[1:] = 0.5 * (v[:-1] + v[1:]) * dt[:-1]
+        ds = np.where(np.isfinite(ds), ds, 0.0)
+        s = np.cumsum(ds)
+    return ds, s
 
 
 def cumulative_distance_m(lat: np.ndarray, lon: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -241,9 +269,9 @@ def acceleration_from_speed(
     if len(epoch) >= 2 and np.all(np.diff(epoch) > 0):
         acc = np.gradient(v_smooth, epoch)
     else:
-        t = np.cumsum(dt_s)
-        t = t - t[0]
-        # Avoid zero-length time axis.
+        t = np.zeros(len(dt_s), dtype=float)
+        if len(dt_s) >= 2:
+            t[1:] = np.cumsum(dt_s[:-1])
         if len(t) >= 2 and t[-1] > t[0]:
             acc = np.gradient(v_smooth, t)
         else:
@@ -310,25 +338,38 @@ def preprocess_trip(trip: TripRecord, config: dict[str, Any]) -> ProcessedTrip:
     lat = pd.Series(lat).ffill().bfill().to_numpy(dtype=float)
     lon = pd.Series(lon).ffill().bfill().to_numpy(dtype=float)
     alt = pd.Series(alt).ffill().bfill().fillna(0.0).to_numpy(dtype=float)
-    ds, s = cumulative_distance_m(lat, lon)
+    ds_hav, s_hav = cumulative_distance_m(lat, lon)
     # Zero only continent-scale teleports. Analysed GPS often holds a fix for
-    # several seconds then jumps 50–150 m; those steps are real distance.
-    ds_max = np.maximum(80.0 * dt, 2000.0)
-    jump = (ds > ds_max) | ~np.isfinite(ds)
+    # several seconds then jumps 50–150 m; those steps are real Haversine distance
+    # used for grade, not for Wh/km.
+    ds_max = np.zeros_like(ds_hav)
+    if len(ds_hav) >= 2:
+        ds_max[1:] = np.maximum(80.0 * dt[:-1], 2000.0)
+    jump = (ds_hav > ds_max) | ~np.isfinite(ds_hav)
     n_jumps = int(np.sum(jump))
     if n_jumps:
-        ds = ds.copy()
-        ds[jump] = 0.0
-        s = np.cumsum(ds)
+        ds_hav = ds_hav.copy()
+        ds_hav[jump] = 0.0
+        s_hav = np.cumsum(ds_hav)
         notes.append(f"implausible_gps_jumps_zeroed={n_jumps}")
-    frame["ds_m"] = ds
-    frame["s_m"] = s
-    frame["distance_km"] = s / 1000.0
+    frame["ds_m"] = ds_hav
+    frame["s_m"] = s_hav
+    frame["s_haversine_m"] = s_hav
     frame["gps_jump_flag"] = jump
+
+    ds_can, s_can = trapezoid_path_m(frame["speed_mps"].to_numpy(dtype=float), dt)
+    frame["ds_can_m"] = ds_can
+    frame["s_can_m"] = s_can
+    gps_v = pd.to_numeric(frame["gps_speed_mps"], errors="coerce").to_numpy(dtype=float)
+    gps_v = np.where(np.isfinite(gps_v), gps_v, 0.0)
+    _, s_gps_speed = trapezoid_path_m(gps_v, dt)
+    frame["s_gps_speed_m"] = s_gps_speed
+    # Trip distance / Wh/km uses integrated CAN speed, not sparse GPS fixes.
+    frame["distance_km"] = s_can / 1000.0
 
     theta, grade, grade_stats = estimate_grade(
         alt,
-        s,
+        s_hav,
         spatial_window_m=float(pre.get("grade_spatial_window_m", 40.0)),
         ds_min_m=float(pre.get("grade_ds_min_m", 5.0)),
         grade_clip=float(pre.get("grade_clip", 0.20)),
@@ -361,7 +402,10 @@ def preprocess_trip(trip: TripRecord, config: dict[str, Any]) -> ProcessedTrip:
     stats = {
         "dt": dt_stats,
         "grade": grade_stats,
-        "distance_m": float(s[-1]) if len(s) else 0.0,
+        "distance_m": float(s_can[-1]) if len(s_can) else 0.0,
+        "distance_can_m": float(s_can[-1]) if len(s_can) else 0.0,
+        "distance_gps_speed_m": float(s_gps_speed[-1]) if len(s_gps_speed) else 0.0,
+        "distance_haversine_m": float(s_hav[-1]) if len(s_hav) else 0.0,
         "duration_s": float(np.nansum(dt)),
         "n_rows": int(len(frame)),
         "main_features": list(MAIN_MODEL_FEATURES),

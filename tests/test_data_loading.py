@@ -47,3 +47,22 @@ def test_canonical_speed_column():
     src = FIXTURES / "analysed" / "T1" / "T1_01_01_2021.csv"
     rec = load_trip_csv(src, "T1_01_01_2021", "T1", "analysed")
     assert rec.frame["speed_kmh"].iloc[4] == 36.0
+
+
+def test_preprocess_reports_can_gps_and_haversine_distances():
+    from config import load_config
+    from data.preprocessing import preprocess_trip
+    from paths import project_root
+
+    config = load_config(project_root() / "configs" / "base.yaml")
+    rec = load_trip_csv(FIXTURES / "analysed" / "T1" / "T1_01_01_2021.csv", "T1_01_01_2021", "T1", "analysed")
+    trip = preprocess_trip(rec, config)
+    assert trip.stats["distance_can_m"] > 0.0
+    assert trip.stats["distance_gps_speed_m"] >= 0.0
+    assert trip.stats["distance_haversine_m"] >= 0.0
+    assert "s_can_m" in trip.frame.columns
+    assert "s_gps_speed_m" in trip.frame.columns
+    assert "s_haversine_m" in trip.frame.columns
+    # Trip distance used for Wh/km is CAN-integrated speed.
+    assert abs(trip.stats["distance_m"] - trip.stats["distance_can_m"]) < 1e-12
+    assert abs(float(trip.frame["s_can_m"].iloc[-1]) - trip.stats["distance_can_m"]) < 1e-12

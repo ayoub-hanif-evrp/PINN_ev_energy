@@ -33,8 +33,9 @@ def test_haversine_one_degree_at_equator():
 
 
 def test_dt_in_seconds_used_for_energy():
-    p = np.ones(10)
-    dt = np.full(10, 2.0)  # 2-second samples
+    p = np.ones(11)
+    dt = np.zeros(11)
+    dt[:-1] = 2.0  # 10 intervals of 2 s
     # 1 kW * 20 s = 20/3600 kWh
     assert abs(energy_kwh_from_power(p, dt) - 20.0 / 3600.0) < 1e-12
 
@@ -46,5 +47,7 @@ def test_epoch_seconds_is_unit_safe():
     epoch = epoch_seconds(ts)
     np.testing.assert_allclose(np.diff(epoch), 1.0)
     dt, stats = compute_dt_seconds(ts.to_numpy())
-    np.testing.assert_allclose(dt[1:], 1.0)
+    np.testing.assert_allclose(dt[:-1], 1.0)
+    assert dt[-1] == 0.0
+    assert stats["n_intervals"] == 4
     assert stats["n_nonpositive_dt"] == 0

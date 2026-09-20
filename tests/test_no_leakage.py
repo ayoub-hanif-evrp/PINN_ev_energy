@@ -7,7 +7,13 @@ from pathlib import Path
 import numpy as np
 
 from config import load_config
-from data.features import trip_level_feature_table
+from data.features import (
+    assert_no_soc_in_predictors,
+    elasticnet_feature_matrix,
+    elasticnet_target,
+    trip_level_feature_table,
+)
+from data.schema import ELASTICNET_FEATURES, SOC_LABEL_COLUMNS
 from data.loader import load_trip_csv
 from data.preprocessing import preprocess_trip
 from data.scaling import TripStandardScaler
@@ -72,9 +78,26 @@ def test_elasticnet_design_matrix_excludes_test_trip_and_its_target():
     table = trip_level_feature_table([train])
     assert test.trip_id not in set(table["trip_id"])
     assert "soc_delta" in table.columns
-    # The outer test target must not appear in the training response vector.
-    y_train = table.set_index("trip_id")["soc_delta"]
+    y_train = elasticnet_target(table)
     assert test.trip_id not in y_train.index
+
+
+def test_elasticnet_whitelist_excludes_all_soc_derived_columns():
+    config = load_config(project_root() / "configs" / "base.yaml")
+    train, _ = _trips(config)
+    table = trip_level_feature_table([train])
+    # A naive "all numeric except soc_delta" matrix would leak ΔSOC = start - end.
+    numeric = table.select_dtypes(include="number")
+    naive = [c for c in numeric.columns if c != "soc_delta"]
+    assert "soc_start" in naive and "soc_end" in naive
+    x = elasticnet_feature_matrix(table)
+    assert list(x.columns) == list(ELASTICNET_FEATURES)
+    assert_no_soc_in_predictors(x.columns)
+    for col in SOC_LABEL_COLUMNS:
+        assert col not in x.columns
+    assert "soc_start" not in x.columns
+    assert "soc_end" not in x.columns
+    assert "soc_delta" not in x.columns
 
 
 def test_data_scarcity_subsets_only_allowed_training_trips():

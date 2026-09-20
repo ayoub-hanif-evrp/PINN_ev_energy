@@ -90,20 +90,25 @@ features:
   optional_soc_input_ablation: false
 
 windows:
-  soc_event_k: [1, 2, 3]
-  fixed_time_s: [120, 300, 600]
-  min_abs_dsoc_for_fixed: 1.0  # in units of estimated q
+  # Absolute SoC change in percentage points, NOT k * q.
+  # Empirical q on analysed HELECAR-D is ~0.02 pp (~1.2 Wh at 6 kWh).
+  # Using 1q/2q/3q would create few-second windows that collapse toward
+  # instantaneous SoC-difference supervision.
+  soc_event_dsoc_pct: [0.1, 0.2, 0.5]
+  soc_event_min_duration_s: 60.0
+  fixed_time_s: [60, 120, 300, 600]
+  min_abs_dsoc_for_fixed_pct: 0.1
   include_full_trip: true
   train_overlap: true
   eval_non_overlapping: true
   huber_delta_mode: quantization  # quantization | fixed
   huber_delta_kwh: null  # used if mode == fixed
-  # Event-window starting stride in samples (in addition to SoC-change indices).
   event_start_stride: 30
 
 physics:
   use_wind_as_headwind: false  # MUST remain false: no wind direction in analysed data
-  apply_power_bounds: true
+  # Off by default: 13 kW is motor/wheel power. Soft wheel bounds are optional.
+  apply_power_bounds: false
   bound_sharpness: 8.0
   p_scale_kw: 5.0
 

@@ -41,7 +41,8 @@ from plotting.diagnostics import (  # noqa: E402
 DATA_PLACEMENT = """\
 No HELECAR-D candidate CSV files were found.
 
-Place the dataset anywhere inside the project directory, for example:
+Download the official HELECAR-D release locally (do not commit it), then place
+it anywhere inside the project directory, for example:
 
   data/HELECAR-D/data/Analysed/T1/*.csv
   HELECAR-D/data/Analysed/T1/*.csv
@@ -282,7 +283,9 @@ def run_audit(config: dict, do_preprocess: bool = True) -> int:
         for p in processed:
             cache_processed_trip(p, config)
             _print(
-                f"  {p.trip_id}: distance={p.stats['distance_m']/1000:.2f} km  "
+                f"  {p.trip_id}: CAN={p.stats['distance_can_m']/1000:.2f} km  "
+                f"GPSspeed={p.stats['distance_gps_speed_m']/1000:.2f} km  "
+                f"Haversine={p.stats['distance_haversine_m']/1000:.2f} km  "
                 f"duration={p.stats['duration_s']/60:.1f} min  "
                 f"grade_clip_frac={p.stats['grade']['clip_fraction']:.4f}  "
                 f"notes={p.notes}"
@@ -292,7 +295,7 @@ def run_audit(config: dict, do_preprocess: bool = True) -> int:
 
         params = load_vehicle_parameters(config=config)
         phys_rows = []
-        apply_bounds = bool(config.get("physics", {}).get("apply_power_bounds", True))
+        apply_bounds = bool(config.get("physics", {}).get("apply_power_bounds", False))
         sharpness = float(config.get("physics", {}).get("bound_sharpness", 8.0))
         for p in processed:
             df = p.frame

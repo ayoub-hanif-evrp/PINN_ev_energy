@@ -1,10 +1,15 @@
-"""Quantization-aware weak energy windows.
+"""Weak energy windows from quantized/noisy SoC — not instantaneous ΔSoC labels.
 
 Observed energy uses SoC endpoints only:
     E_obs(w) = E_battery * (SOC[a] - SOC[b]) / 100
 
-Predicted energy uses a prefix sum of latent power, never a fake
-instantaneous P_t = E_battery * (SOC_t - SOC_{t+1}).
+Predicted energy uses trapezoidal prefix integration:
+    E_pred(w) = prefix[b] - prefix[a]
+
+Default SoC-event thresholds are absolute percentage-point changes
+(0.1, 0.2, 0.5), not k times the ~0.02% quantization step. Short
+few-second events are rejected so supervision does not collapse to
+instantaneous SoC differences.
 """
 
 from __future__ import annotations
@@ -61,24 +66,28 @@ def mean_loss_per_scale(scale_to_losses: dict[str, Iterable[float]]) -> float:
     return float(np.mean(means))
 
 
-def _soc_change_indices(soc: np.ndarray, q: float) -> np.ndarray:
+def _soc_change_indices(soc: np.ndarray, min_step: float) -> np.ndarray:
     if len(soc) == 0:
         return np.array([], dtype=int)
     step = np.abs(np.diff(soc, prepend=soc[0]))
-    changed = np.where(step >= max(0.25 * q, 1e-9))[0]
+    changed = np.where(step >= max(min_step, 1e-9))[0]
     if 0 not in changed:
         changed = np.concatenate([[0], changed])
     return np.unique(changed)
 
 
 def _end_index_for_duration(dt: np.ndarray, start: int, duration_s: float) -> int | None:
-    n = len(dt)
+    """dt[i] is the forward interval from i to i+1."""
     acc = 0.0
-    for j in range(start + 1, n):
+    for j in range(start, len(dt) - 1):
         acc += float(dt[j])
         if acc >= duration_s:
-            return j
+            return j + 1
     return None
+
+
+def _window_duration_s(dt: np.ndarray, start: int, end: int) -> float:
+    return float(np.nansum(dt[start:end]))
 
 
 def generate_trip_windows(
@@ -94,23 +103,30 @@ def generate_trip_windows(
         return []
     soc = pd.to_numeric(df["soc"], errors="coerce").to_numpy(dtype=float)
     dt = df["dt_s"].to_numpy(dtype=float)
-    s = df["s_m"].to_numpy(dtype=float) if "s_m" in df.columns else np.zeros(len(df))
+    if "s_can_m" in df.columns:
+        s = df["s_can_m"].to_numpy(dtype=float)
+    elif "s_m" in df.columns:
+        s = df["s_m"].to_numpy(dtype=float)
+    else:
+        s = np.zeros(len(df))
     n = len(df)
-    if n < 2 or not np.isfinite(q) or q <= 0:
+    if n < 2:
         return []
 
     windows: list[EnergyWindow] = []
-    k_list = list(cfg.get("soc_event_k", [1, 2, 3]))
-    time_list = list(cfg.get("fixed_time_s", [120, 300, 600]))
-    min_abs_dsoc_fixed = float(cfg.get("min_abs_dsoc_for_fixed", 1.0)) * q
+    dsoc_thresholds = [float(x) for x in cfg.get("soc_event_dsoc_pct", [0.1, 0.2, 0.5])]
+    time_list = list(cfg.get("fixed_time_s", [60, 120, 300, 600]))
+    min_abs_dsoc_fixed = float(cfg.get("min_abs_dsoc_for_fixed_pct", 0.1))
+    min_event_dur = float(cfg.get("soc_event_min_duration_s", 60.0))
     event_stride = int(cfg.get("event_start_stride", 30))
+    change_step = float(q) if np.isfinite(q) and q > 0 else 0.02
 
     def add_window(start: int, end: int, scale: str) -> None:
         if end <= start or end >= n or start < 0:
             return
         dsoc = float(soc[start] - soc[end])
         e_obs = observed_energy_kwh(soc[start], soc[end], battery_capacity_kwh)
-        duration = float(np.nansum(dt[start + 1 : end + 1]))
+        duration = _window_duration_s(dt, start, end)
         distance = float(s[end] - s[start])
         windows.append(
             EnergyWindow(
@@ -125,13 +141,11 @@ def generate_trip_windows(
             )
         )
 
-    # A. SoC-event windows
-    starts = _soc_change_indices(soc, q)
+    starts = _soc_change_indices(soc, change_step)
     if event_stride > 0:
         stride_starts = np.arange(0, n - 1, event_stride)
         starts = np.unique(np.concatenate([starts, stride_starts]))
-    for k in k_list:
-        thresh = float(k) * q
+    for thresh in dsoc_thresholds:
         last_end = -1
         for a in starts:
             a = int(a)
@@ -144,17 +158,17 @@ def generate_trip_windows(
                     break
             if target is None:
                 continue
-            add_window(a, target, f"soc_event_k{k}")
+            if _window_duration_s(dt, a, target) < min_event_dur:
+                continue
+            add_window(a, target, f"soc_event_{thresh}")
             last_end = target
 
-    # B. Fixed-time windows (overlapping uses half-duration stride so they do not explode)
     for duration in time_list:
         last_end = -1
         start = 0
         stride = 1
         if overlapping:
-            # Advance by ~half the window in samples using mean dt.
-            mean_dt = float(np.nanmean(dt[dt > 0])) if np.any(dt > 0) else 1.0
+            mean_dt = float(np.nanmean(dt[:-1][dt[:-1] > 0])) if n >= 2 and np.any(dt[:-1] > 0) else 1.0
             stride = max(1, int(round(float(duration) / (2.0 * mean_dt))))
         while start < n - 1:
             if not overlapping and start < last_end:
@@ -171,7 +185,6 @@ def generate_trip_windows(
             else:
                 start = end
 
-    # C. Full-trip
     if cfg.get("include_full_trip", True):
         add_window(0, n - 1, "full_trip")
 

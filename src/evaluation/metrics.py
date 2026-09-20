@@ -27,9 +27,8 @@ def reconstruct_soc(
     if battery_capacity_kwh <= 0:
         raise ValueError("battery_capacity_kwh must be positive")
     prefix = energy_prefix_kwh(power_kw, dt_s)
-    cum = prefix[:-1]
-    soc_hat = float(soc_initial) - (100.0 / float(battery_capacity_kwh)) * cum
-    soc_end_hat = float(soc_initial) - (100.0 / float(battery_capacity_kwh)) * float(prefix[-1])
+    soc_hat = float(soc_initial) - (100.0 / float(battery_capacity_kwh)) * prefix
+    soc_end_hat = float(soc_hat[-1]) if soc_hat.size else float(soc_initial)
     return {
         "soc_hat": soc_hat,
         "soc_end_hat": soc_end_hat,

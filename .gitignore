@@ -30,3 +30,6 @@ outputs/cache/**
 # Local env
 .env
 *.log
+
+# Local HELECAR-D download (CC-BY-4.0). Do not commit the dataset.
+/HELECAR-D/

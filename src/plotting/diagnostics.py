@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from data.preprocessing import ProcessedTrip, smooth_series
+from data.preprocessing import ProcessedTrip, elapsed_seconds, smooth_series
 
 
 def _save(fig: plt.Figure, path: Path) -> None:
@@ -47,7 +47,7 @@ def plot_trip_overview(trips: list[ProcessedTrip], path: Path, max_trips: int = 
     fig, axes = plt.subplots(len(subset), 3, figsize=(12, 2.4 * len(subset)), squeeze=False)
     for i, trip in enumerate(subset):
         df = trip.frame
-        t = np.cumsum(df["dt_s"].to_numpy(dtype=float))
+        t = elapsed_seconds(df["dt_s"].to_numpy(dtype=float))
         axes[i, 0].plot(t, df["speed_mps"] * 3.6, lw=0.8)
         axes[i, 0].set_ylabel("Speed (km/h)")
         axes[i, 1].plot(t, df["alt_m"], lw=0.8, color="#b35c00")
@@ -64,7 +64,7 @@ def plot_trip_overview(trips: list[ProcessedTrip], path: Path, max_trips: int = 
 
 def plot_speed_acceleration(trip: ProcessedTrip, path: Path, sensitivity_windows: Iterable[int] | None = None) -> None:
     df = trip.frame
-    t = np.cumsum(df["dt_s"].to_numpy(dtype=float))
+    t = elapsed_seconds(df["dt_s"].to_numpy(dtype=float))
     v = df["speed_mps"].to_numpy(dtype=float)
     fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
     axes[0].plot(t, v * 3.6, lw=0.7, label="raw CAN speed", alpha=0.7)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
 from config import load_config
@@ -34,16 +35,31 @@ def test_windows_never_cross_trip_boundaries():
         assert w.trip_id in lengths
 
 
-def test_soc_event_windows_require_meaningful_dsoc():
+def test_default_soc_events_reject_few_second_windows():
     config = load_config(project_root() / "configs" / "base.yaml")
     trips = _processed_pair(config)
-    q = 0.02
-    windows = generate_trip_windows(trips[0], 6.0, q, config=config, overlapping=True)
+    windows = generate_trip_windows(trips[0], 6.0, 0.02, config=config, overlapping=True)
+    events = [w for w in windows if w.scale.startswith("soc_event")]
+    # Fixture trips are ~15 s; 60 s minimum duration must suppress 1q/2q-style events.
+    assert events == []
+    assert all(w.duration_s >= 60.0 for w in events)
+
+
+def test_soc_event_windows_use_absolute_percent_thresholds():
+    config = deepcopy(load_config(project_root() / "configs" / "base.yaml"))
+    config["windows"]["soc_event_min_duration_s"] = 0.0
+    config["windows"]["soc_event_dsoc_pct"] = [0.1, 0.2, 0.5]
+    trips = _processed_pair(config)
+    windows = generate_trip_windows(trips[0], 6.0, 0.02, config=config, overlapping=True)
     events = [w for w in windows if w.scale.startswith("soc_event")]
     assert events
+    scales = {w.scale for w in events}
+    assert "soc_event_0.1" in scales
     for w in events:
-        k = int(w.scale.replace("soc_event_k", ""))
-        assert abs(w.dsoc) + 1e-9 >= k * q
+        thresh = float(w.scale.replace("soc_event_", ""))
+        assert abs(w.dsoc) + 1e-9 >= thresh
+        # Must not be a 1q/2q/3q label (q≈0.02).
+        assert not w.scale.startswith("soc_event_k")
 
 
 def test_full_trip_window_present():
