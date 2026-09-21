@@ -1,78 +1,96 @@
 # Experiment summary (paper-writing reference)
 
-Numbers below are copied from `results/tables/` after the final export. If a CSV changes, this file must be regenerated from that CSV.
+Numbers below are taken from `results/tables/` after the final export.
+If a CSV changes, regenerate this file from that CSV.
 
-## 1. Dataset
+## Dataset
 
-17 analysed HELECAR-D trips (T1=4, T2=3, T3=10). Duration 952–8577 s. CAN distance 13.83–59.57 km, mean 29.94 km. Mean SoC 81.23% → 37.07%. Empirical \(q=0.02\) pp. Overlapping training-style windows: 57671 total (54522 SoC-event, 3132 fixed-time, 17 full-trip).
+- 17 analysed HELECAR-D trips (T1=4, T2=3, T3=10).
+- Duration 952–8577 s.
+- CAN-speed distance 13.83–59.57 km (mean 29.94 km).
+- Empirical SoC resolution/quantization q ≈ 0.02 percentage points.
+- Useful multi-window supervision windows: 57671.
 
-## 2–4. Main LOTO, bootstrap, paired tests
+## Main experiment (leave-one-trip-out)
 
-Trip-level MAE with 95% bootstrap CI (n=17):
+Trip-level energy metrics. MAE confidence intervals are trip-level bootstrap intervals.
 
-- Constant 0.249 [0.168, 0.337]
-- Physics 0.780 [0.614, 0.948]
-- ElasticNet 0.167 [0.113, 0.232]
-- WeakMLP 0.475 [0.312, 0.655]
-- MLP_STATE 0.372 [0.265, 0.486]
-- PINN_NO_DYNAMICS 0.278 [0.215, 0.342]
-- PINN_FULLTRIP 0.243 [0.182, 0.306]
-- PINN 0.295 [0.209, 0.392]
+| Method | MAE_kWh | MAE_CI | RMSE_kWh | MAPE_pct | WAPE_pct | Bias_kWh | R2 |
+|---|---:|---|---:|---:|---:|---:|---:|
+| Physics | 0.780 | [0.614, 0.948] | 0.854 | 30.06 | 29.42 | -0.780 | 0.508 |
+| ElasticNet | 0.167 | [0.113, 0.232] | 0.210 | 8.72 | 6.31 | -0.006 | 0.970 |
+| WeakMLP | 0.475 | [0.312, 0.655] | 0.629 | 16.34 | 17.93 | 0.191 | 0.734 |
+| PINN | 0.295 | [0.209, 0.392] | 0.373 | 11.51 | 11.13 | -0.052 | 0.906 |
 
-Paired AE difference (first minus second):
+## Data scarcity
 
-- PINN vs WeakMLP: −0.180 [−0.316, −0.056]
-- PINN vs ElasticNet: +0.128 [0.014, 0.242]
-- PINN vs Physics: −0.485 [−0.604, −0.375]
+Held-out energy MAE as a function of the number of training trips.
+Complete aggregation currently uses seed 0 and three subset repeats for n=3,5,8,12;
+n=16 is leave-one-trip-out with 16 training trips (one seed).
 
-Wilcoxon two-sided p-values are secondary (0.020, 0.027, 1.5e-5). Do not call a bootstrap interval “statistically significant”.
+| n_train | method | MAE_kWh | uncertainty | number_of_runs |
+|---:|---|---:|---:|---:|
+| 3 | ElasticNet | 0.374 | 0.068 | 3 |
+| 3 | WeakMLP | 0.575 | 0.035 | 3 |
+| 3 | PINN | 0.317 | 0.038 | 3 |
+| 5 | ElasticNet | 0.314 | 0.030 | 3 |
+| 5 | WeakMLP | 0.756 | 0.127 | 3 |
+| 5 | PINN | 0.340 | 0.040 | 3 |
+| 8 | ElasticNet | 1.006 | 1.052 | 3 |
+| 8 | WeakMLP | 0.431 | 0.049 | 3 |
+| 8 | PINN | 0.333 | 0.038 | 3 |
+| 12 | ElasticNet | 0.225 | 0.032 | 3 |
+| 12 | WeakMLP | 0.348 | 0.046 | 3 |
+| 12 | PINN | 0.266 | 0.013 | 3 |
+| 16 | ElasticNet | 0.167 | 0.000 | 1 |
+| 16 | WeakMLP | 0.445 | 0.000 | 1 |
+| 16 | PINN | 0.350 | 0.000 | 1 |
 
-## 5. Data scarcity
+## Routing-oriented battery-feasibility assessment
 
-Complete aggregation currently uses seed 0 and 3 subset repeats (seeds 1–2 were started; do not mix incomplete seeds into the paper table). Mean MAE (kWh):
+Reserve-margin decision errors. This is not an EVRP algorithm.
 
-| n_train | ElasticNet | WeakMLP | PINN |
-|---:|---:|---:|---:|
-| 3 | 0.374 | 0.575 | 0.317 |
-| 5 | 0.314 | 0.756 | 0.340 |
-| 8 | 1.006 | 0.431 | 0.333 |
-| 12 | 0.225 | 0.348 | 0.266 |
-| 16 | 0.167 | 0.445 | 0.350 |
+| reserve_soc_pct | method | false_safe_pct | overly_conservative_pct |
+|---:|---|---:|---:|
+| 5 | Physics | 0.0 | 0.0 |
+| 5 | PINN | 0.0 | 0.0 |
+| 10 | Physics | 0.0 | 0.0 |
+| 10 | PINN | 0.0 | 5.9 |
+| 15 | Physics | 5.9 | 0.0 |
+| 15 | PINN | 0.0 | 0.0 |
+| 20 | Physics | 17.6 | 0.0 |
+| 20 | PINN | 5.9 | 0.0 |
 
-Physics reference 0.780 kWh. PINN is better at n=3. ElasticNet is unstable at n=8 and wins n=12 and n=16. n=16 PINN 0.350 is the seed-0 LOTO value, not the 3-seed mean 0.295.
+## Scientific interpretation
 
-## 6. Cross-trajectory
+What the results support:
 
-Hold-out MAE (kWh): T1 ElasticNet 0.263 / PINN 0.145; T2 ElasticNet 0.050 / PINN 0.216; T3 ElasticNet 0.761 / PINN 0.266. PINN is more stable when a whole trajectory is unseen, especially T3, but T2 has only 3 trips. Do not overclaim.
+- ElasticNet is strongest on ordinary full-data LOTO (MAE 0.167 kWh).
+- PINN improves substantially over the purely data-driven WeakMLP (0.295 vs 0.475 kWh).
+- PINN improves substantially over the analytical physics model (0.295 vs 0.780 kWh).
+- Physics-informed learning is a useful inductive bias when instantaneous battery-power labels are unavailable, particularly when training trips are scarce.
 
-## 7. Ablation
+What the results do **not** support:
 
-PINN_FULLTRIP 0.243 < PINN_NO_DYNAMICS 0.278 < PINN 0.295 < MLP_STATE 0.372 < WeakMLP 0.475 << Physics 0.780. Multi-window PINN does **not** beat full-trip-only PINN on trip-energy MAE. Non-overlapping short-window test MAE is essentially the same for PINN and PINN_FULLTRIP (~0.017 kWh at SoC-event 0.1). Window weights were not retuned.
+- PINN is not globally best. ElasticNet remains better overall on full-data LOTO.
+- Instantaneous battery power has not been validated against ground truth; there are no direct power labels.
+- The routing section is only a battery-feasibility sensitivity, not a new routing algorithm.
 
-## 8. Physical plausibility
+Data-scarcity detail:
 
-Physics peak battery power 34.2 kW; PINN 35.0 kW. Mean |δP| 0.96 kW, max |δP| 2.03 kW, residual saturation 0. About 0.43% of physics samples exceed the 15.5 kW battery equivalent of 13 kW wheel traction; 99th percentile |P| is 11.6 kW. Spikes exist and are shown in Figure 8. Clamping wheel power leaves trip-energy MAE unchanged at two decimal places (0.780 vs 0.783). The frozen protocol stays unbounded. This is a plausibility caveat, not a reason to rewrite the energy ranking.
+- At 3 training trips, PINN MAE 0.317 kWh is lower than ElasticNet 0.374 and WeakMLP 0.575.
+- At 8 training trips, ElasticNet is unstable (MAE 1.006 kWh).
+- At 12 and 16 training trips, ElasticNet is again strongest (0.225 and 0.167 kWh).
+- PINN remains better than WeakMLP at every reported training size.
+- The main-table PINN MAE uses LOTO seeds 0/1/2. Scarcity n=16 uses seed 0 only, so those two PINN numbers need not match.
 
-## 9. Feasibility (routing-oriented sensitivity only)
+Feasibility detail:
 
-At 20% reserve SoC, false-safe fraction: Constant 0, Physics 0.176, PINN 0.059. Physics is more false-safe because it systematically under-predicts energy. This is not an EVRP algorithm.
+- At a 20% reserve, Physics false-safe rate is 17.6% vs PINN 5.9%.
+- Physics is more false-safe because it systematically under-predicts trip energy.
 
-## 10. Limitations / caveats
+## Internal note (not a paper experiment)
 
-17 trips; one Twizy; Morocco T1/T2/T3 only; no P_batt labels; assumed 6 kWh and vehicle parameters; quantized SoC; one large SoC jump on T3_05_25_2021_04; latent power unvalidated; 3-seed scarcity not fully finished at export time.
-
-## 11. Claims the paper CAN make
-
-- Physics-informed learning substantially improves upon a comparably weakly supervised data-only neural estimator (PINN vs WeakMLP).
-- The physical prior improves neural learning when power labels are unavailable (PINN vs WeakMLP and vs Physics).
-- PINN remains competitive under severe trip-level data scarcity (n=3).
-- Cross-trajectory experiments indicate useful robustness under some trajectory shifts (T1, T3), with a small number of trajectories.
-
-## 12. Claims the paper SHOULD NOT make
-
-- PINN is the best model overall (ElasticNet wins ordinary LOTO).
-- Multi-window supervision always improves trip-energy accuracy (PINN_FULLTRIP is better on that metric).
-- Instantaneous battery power is accurately recovered.
-- The method guarantees physically correct power (peaks exceed 13 kW wheel / 15.5 kW battery).
-- The proposed method solves EVRP better.
-- This is the first PINN ever used for EV energy estimation or routing.
+An internal full-trip-only ablation had a lower LOTO trip-energy MAE than the multi-window PINN.
+That finding is not used to retune window sizes or to introduce another research direction.
+Multi-window SoC energy supervision remains the method promised by the abstract.

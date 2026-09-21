@@ -1,0 +1,9 @@
+reserve_soc_pct,method,false_safe_pct,overly_conservative_pct
+5.0,Physics,0.0,0.0
+5.0,PINN,0.0,0.0
+10.0,Physics,0.0,0.0
+10.0,PINN,0.0,5.88235294117647
+15.0,Physics,5.88235294117647,0.0
+15.0,PINN,0.0,0.0
+20.0,Physics,17.647058823529413,0.0
+20.0,PINN,5.88235294117647,0.0

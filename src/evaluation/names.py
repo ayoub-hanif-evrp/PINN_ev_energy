@@ -58,10 +58,11 @@ METHOD_LINESTYLES = {
     "pinn": "-",
 }
 
+PAPER_METHODS = ["physics", "elasticnet", "weak_mlp", "pinn"]
 ABLATION_ORDER = ["weak_mlp", "mlp_state", "pinn_no_dynamics", "pinn_fulltrip", "pinn"]
 PARITY_METHODS = ["physics", "elasticnet", "weak_mlp", "pinn"]
 SCARCITY_METHODS = ["elasticnet", "weak_mlp", "pinn"]
-FEASIBILITY_METHODS = ["constant", "physics", "pinn"]
+FEASIBILITY_METHODS = ["physics", "pinn"]
 
 
 def label(method: str) -> str:

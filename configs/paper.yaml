@@ -23,4 +23,4 @@ training:
 scarcity:
   n_train_trips: [3, 5, 8, 12, 16]
   n_subset_repeats: 3
-  seeds: [0, 1, 2]
+  seeds: [0]

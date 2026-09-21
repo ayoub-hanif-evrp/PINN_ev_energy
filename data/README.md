@@ -1,16 +1,27 @@
 # Dataset placement
 
-Download **HELECAR-D** (NaitMalek et al., *Data in Brief*, 2023; CC-BY-4.0) and place it so analysed trip CSVs are discoverable from the repository root. Discovery is recursive and does not assume a published folder layout.
+This project uses the **HELECAR-D** analysed driving records. The dataset is **not** versioned in this repository. Download it locally, then point the code at the analysed CSV files.
+
+## Official sources
+
+- Dataset paper: NaitMalek, Y., Najib, M., Bakhouya, M., Gaber, J., 2023. HELECAR-D: A dataset for urban electro mobility in Moroccan context. *Data in Brief* 48, 109080. https://doi.org/10.1016/j.dib.2023.109080
+- Data release: https://doi.org/10.5281/zenodo.7217707 (https://zenodo.org/record/7217707)
+- License: CC-BY-4.0
+
+## Expected location
+
+Place the download so analysed trip CSVs are discoverable from the repository root. Discovery is recursive and does not assume a published folder layout.
 
 Typical layout:
 
 ```
-HELECAR-D/data/Analysed/T1/*.csv
-HELECAR-D/data/Analysed/T2/*.csv
-HELECAR-D/data/Analysed/T3/*.csv
+PINN_ev_energy/
+├── HELECAR-D/data/Analysed/T1/*.csv
+├── HELECAR-D/data/Analysed/T2/*.csv
+└── HELECAR-D/data/Analysed/T3/*.csv
 ```
 
-Analysed CSVs are preferred over raw CAN dumps. The root `HELECAR-D/` directory is gitignored and must not be committed. Code and paper artifacts remain in this repository; the dataset retains its own license.
+The root `HELECAR-D/` directory is gitignored. Analysed CSVs are preferred over raw CAN dumps.
 
 ## Do not
 
