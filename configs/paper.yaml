@@ -3,12 +3,24 @@ extends: base.yaml
 experiment:
   profile: paper
   seed: 0
-  seeds: [0, 1, 2, 3, 4]
+  seeds: [0, 1, 2]
+  cross_traj_seeds: [0]
+  methods:
+    - constant
+    - physics
+    - elasticnet
+    - weak_mlp
+    - mlp_state
+    - pinn_no_dynamics
+    - pinn_fulltrip
+    - pinn
 
 training:
-  max_epochs: 2000
-  early_stopping_patience: 150
-  lambda_physics_grid: [0.001, 0.01, 0.1, 1.0]
+  max_epochs: 1200
+  early_stopping_patience: 100
+  lambda_physics_grid: [0.1]
 
 scarcity:
-  n_subset_repeats: 5
+  n_train_trips: [3, 5, 8, 12, 16]
+  n_subset_repeats: 3
+  seeds: [0]

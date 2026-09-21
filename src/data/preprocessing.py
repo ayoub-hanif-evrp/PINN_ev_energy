@@ -367,6 +367,8 @@ def preprocess_trip(trip: TripRecord, config: dict[str, Any]) -> ProcessedTrip:
     frame["s_gps_speed_m"] = s_gps_speed
     # Trip distance / Wh/km uses integrated CAN speed, not sparse GPS fixes.
     frame["distance_km"] = s_can / 1000.0
+    frame["elapsed_s"] = elapsed_seconds(dt)
+    frame["cumulative_distance_km"] = s_can / 1000.0
 
     theta, grade, alt_smooth, grade_stats = estimate_grade(
         alt,
@@ -435,6 +437,7 @@ def _config_fingerprint(config: dict[str, Any]) -> str:
     payload = {
         "preprocessing": config.get("preprocessing", {}),
         "vehicle": config.get("vehicle", {}),
+        "feature_schema": "progress_v1",
     }
     blob = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
     return sha256(blob).hexdigest()[:16]

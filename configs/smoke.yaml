@@ -1,0 +1,20 @@
+extends: base.yaml
+
+experiment:
+  profile: smoke
+  seed: 0
+  seeds: [0]
+  test_trip_ids: smoke_representative
+  methods:
+    - constant
+    - physics
+    - elasticnet
+    - weak_mlp
+    - mlp_state
+    - pinn_no_dynamics
+    - pinn_fulltrip
+    - pinn
+
+training:
+  max_epochs: 25
+  early_stopping_patience: 10

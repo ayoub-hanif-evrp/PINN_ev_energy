@@ -33,17 +33,11 @@ longitudinal physics ------+
 
 ## Status
 
-| Phase | Content | Status |
-|------:|---------|--------|
-| 1 | Project structure, dataset discovery, audit | Implemented |
-| 2 | SI preprocessing, acceleration, distance, grade | Implemented |
-| 3 | Physics-only vehicle model | Implemented |
-| 4 | Quantization-aware energy windows | Implemented |
-| 5 | Constant / physics / ElasticNet baselines | Implemented |
-| 6 | Weakly supervised MLP | Implemented |
-| 7 | Discrete-time PINN | Implemented |
-| 8 | Leave-one-trip-out | Implemented (quick profile) |
-| 9–13 | Full ablations, scarcity, paper figures | Stubs / not launched |
+The reproducible pipeline is implemented: per-fold SoC quantization \(q\), causal PINN state head, grouped inner validation, outer-fold retrain, leakage tests, smoke/quick/paper LOTO, ablations, data scarcity, cross-trajectory, sensitivity, feasibility, figures and tables.
+
+Smoke and quick numbers are **pipeline diagnostics**. Only `configs/paper.yaml` after `reports/protocol_frozen.md` is the paper experiment.
+
+This is a **discrete-time physics-informed neural network**, not an automatic-differentiation PDE PINN.
 
 ## Dataset
 
@@ -77,22 +71,30 @@ python -m pip install -r requirements.txt
 ## Commands
 
 ```bash
-# Dataset audit (Phase 1–4 diagnostics)
 python scripts/audit_data.py --config configs/base.yaml
-
-# Unit tests (synthetic fixtures; no paper numbers)
-python -m pytest -q
-# or: make test
-
-# Later phases (not implemented yet; will fail honestly)
+python scripts/run_loto.py --config configs/smoke.yaml
 python scripts/run_loto.py --config configs/quick.yaml
 python scripts/run_loto.py --config configs/paper.yaml
+python scripts/run_ablations.py --config configs/paper.yaml
+python scripts/run_data_scarcity.py --config configs/paper.yaml
+python scripts/run_cross_trajectory.py --config configs/paper.yaml
+python scripts/run_sensitivity.py --config configs/paper.yaml
+python scripts/run_feasibility_sensitivity.py --config configs/paper.yaml
+python scripts/make_paper_figures.py --results outputs/
+python scripts/make_paper_tables.py --config configs/paper.yaml
+
+make test
+make audit
+make smoke
+make quick
 make paper
 ```
 
-## Anti-leakage (later experiments)
+`make paper` runs the frozen pipeline in order and reuses cached identical fold/method/seed runs. Do not treat smoke/quick metrics as paper results.
 
-Primary evaluation is **leave-one-trip-out** (never a random row split). Normalisation, calibration, hyperparameter selection and early stopping use **training trips only**. Test-trip SoC is used only after prediction to compute metrics.
+## Anti-leakage
+
+Primary evaluation is **leave-one-trip-out** (never a random row split). Normalisation, \(q\), windows, Huber scale, early stopping and ElasticNet fitting use **training trips only**. Inner validation is a deterministic grouped set (one trip per available T1/T2/T3). After model selection the neural model is **discarded** and retrained on all outer-training trips. Test-trip SoC is not a network input; `SOC_test[0]` is used only after power prediction for diagnostic SoC reconstruction. `q_test_posthoc` is evaluation-only.
 
 ## Vehicle physics (nominal)
 

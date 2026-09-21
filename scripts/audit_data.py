@@ -24,6 +24,7 @@ from data.loader import load_selected_trips  # noqa: E402
 from data.preprocessing import cache_processed_trip, epoch_seconds, parse_trip_timestamps, preprocess_trips  # noqa: E402
 from data.quantization import combine_quantization, estimate_soc_quantization  # noqa: E402
 from data.windows import generate_windows, huber_delta_kwh, windows_to_frame  # noqa: E402
+from data.paper_audit import paper_dataset_summary, trip_characteristics_table  # noqa: E402
 from manifest import file_sha256, write_manifest  # noqa: E402
 from paths import project_root, resolve_under_root  # noqa: E402
 from physics.parameters import load_vehicle_parameters  # noqa: E402
@@ -352,6 +353,11 @@ def run_audit(config: dict, do_preprocess: bool = True) -> int:
             _print(f"  Huber delta hint (kWh) = {huber_delta_kwh(params.battery_capacity_kwh, q)}")
             per_trip.to_csv(out_dir / "windows_per_trip.csv")
             counts.to_csv(out_dir / "windows_by_scale.csv", header=["n_windows"])
+            paper = paper_dataset_summary(processed, params.battery_capacity_kwh, q, config)
+            paper.to_csv(out_dir / "paper_dataset_summary.csv", index=False)
+            trip_characteristics_table(processed, params.battery_capacity_kwh).to_csv(
+                out_dir / "trip_characteristics.csv", index=False
+            )
 
         plot_trip_overview(processed, out_dir / "dataset_overview.png")
         plot_method_diagram(out_dir / "method_diagram.png")

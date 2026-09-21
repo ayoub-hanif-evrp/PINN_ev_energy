@@ -61,6 +61,30 @@ MAIN_MODEL_FEATURES = (
     "speed_limit_mps",
 )
 
+# Causal trip-progress features for the PINN/MLP_STATE depletion head only.
+# Derived from telemetry from trip start through the current sample.
+PROGRESS_FEATURES = (
+    "elapsed_s",
+    "cumulative_distance_km",
+)
+
+FEATURE_UNITS = {
+    "soc": "%",
+    "speed_kmh": "km/h",
+    "speed_mps": "m/s",
+    "gps_speed_kmh": "km/h",
+    "gps_speed_mps": "m/s",
+    "alt_m": "m",
+    "temperature_c": "deg_C",
+    "humidity_pct": "%",
+    "wind_speed_mps": "m/s",
+    "traffic": "ordinal_0_1_2",
+    "speed_limit_kmh": "km/h",
+    "speed_limit_mps": "m/s",
+    "elapsed_s": "s",
+    "cumulative_distance_km": "km",
+}
+
 EXCLUDED_MAIN_PREDICTORS = ("date", "time", "lat", "lon", "soc")
 
 # Trip-level ElasticNet predictors. Explicit whitelist: never include SoC-derived

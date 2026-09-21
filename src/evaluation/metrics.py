@@ -105,12 +105,19 @@ def summarize_energy_table(frame) -> dict[str, dict[str, float]]:
         err = yhat - y
         denom = float(np.sum((y - np.mean(y)) ** 2))
         r2 = 1.0 - float(np.sum(err**2) / denom) if denom > 1e-12 else float("nan")
-        ratio = np.abs(err / np.where(np.abs(y) > 1e-12, y, np.nan))
+        abs_obs = np.abs(y)
+        mape_ok = abs_obs > 1e-12
+        ratio = np.abs(err[mape_ok] / y[mape_ok]) if mape_ok.any() else np.array([np.nan])
+        obs_sum = float(np.sum(abs_obs))
+        wape = 100.0 * float(np.sum(np.abs(err))) / obs_sum if obs_sum > 1e-12 else float("nan")
         out[str(method)] = {
             "n": float(len(sub)),
             "mae_kwh": float(np.mean(np.abs(err))),
             "rmse_kwh": float(np.sqrt(np.mean(err**2))),
             "mape_pct": float(np.nanmean(ratio) * 100.0),
+            "mape_n_undefined": float((~mape_ok).sum()),
+            "mape_denominator_rule": "exclude |E_obs| <= 1e-12",
+            "wape_pct": wape,
             "bias_kwh": float(np.mean(err)),
             "r2": r2,
         }

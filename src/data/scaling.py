@@ -1,4 +1,4 @@
-"""Fit feature scalers on training trips only."""
+"""Training-only scalers for telemetry and causal progress features."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from data.preprocessing import ProcessedTrip
-from data.schema import MAIN_MODEL_FEATURES
+from data.schema import MAIN_MODEL_FEATURES, PROGRESS_FEATURES
 
 
 @dataclass
@@ -17,6 +17,7 @@ class TripStandardScaler:
     mean_: np.ndarray | None = None
     std_: np.ndarray | None = None
     fitted_trip_ids: list[str] = field(default_factory=list)
+    missing_fraction_: dict[str, float] = field(default_factory=dict)
 
     def fit(self, trips: list[ProcessedTrip]) -> "TripStandardScaler":
         frames = []
@@ -28,6 +29,9 @@ class TripStandardScaler:
             frames.append(trip.frame.loc[:, list(self.columns)])
             ids.append(trip.trip_id)
         stacked = pd.concat(frames, axis=0, ignore_index=True)
+        self.missing_fraction_ = {
+            c: float(pd.to_numeric(stacked[c], errors="coerce").isna().mean()) for c in self.columns
+        }
         self.mean_ = stacked.mean(axis=0).to_numpy(dtype=float)
         std = stacked.std(axis=0, ddof=0).to_numpy(dtype=float)
         std = np.where(std < 1e-12, 1.0, std)
@@ -39,6 +43,7 @@ class TripStandardScaler:
         if self.mean_ is None or self.std_ is None:
             raise RuntimeError("Scaler has not been fit.")
         x = frame.loc[:, list(self.columns)].to_numpy(dtype=float)
+        # Missing values become the training mean after z-scoring (0 in z-space).
         scaled = (x - self.mean_) / self.std_
         return np.nan_to_num(scaled, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -48,3 +53,10 @@ class TripStandardScaler:
     def assert_not_fitted_on(self, trip_id: str) -> None:
         if trip_id in self.fitted_trip_ids:
             raise AssertionError(f"Leakage: scaler was fit including test trip {trip_id}")
+
+
+class ProgressScaler(TripStandardScaler):
+    """Z-score of elapsed time and CAN-integrated distance. Training trips only."""
+
+    def __init__(self) -> None:
+        super().__init__(columns=PROGRESS_FEATURES)

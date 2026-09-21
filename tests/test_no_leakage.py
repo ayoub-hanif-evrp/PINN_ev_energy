@@ -107,3 +107,42 @@ def test_data_scarcity_subsets_only_allowed_training_trips():
     chosen = list(rng.choice(train_pool, size=3, replace=False))
     assert test_id not in chosen
     assert set(chosen).issubset(set(train_pool))
+
+
+def test_loto_ids_exclude_outer_test_everywhere():
+    from dataclasses import replace
+
+    from training.cross_validation import leave_one_trip_out
+    from models.elasticnet import TripElasticNet
+
+    config = load_config(project_root() / "configs" / "base.yaml")
+    train, test = _trips(config)
+    extra = replace(train, trip_id="T3_clone", trajectory="T3", frame=train.frame.copy())
+    folds = leave_one_trip_out([train, test, extra], seed=0)
+    fold = next(f for f in folds if f.test_id == test.trip_id)
+    assert test.trip_id not in fold.train_ids
+    assert test.trip_id not in fold.inner_train_ids
+    assert test.trip_id not in fold.val_ids
+    scaler = TripStandardScaler().fit([t for t in [train, extra] if t.trip_id in fold.inner_train_ids] or [train, extra])
+    scaler.assert_not_fitted_on(test.trip_id)
+    table = trip_level_feature_table([train, extra])
+    model = TripElasticNet(random_state=0).fit(table)
+    model.assert_not_fitted_on(test.trip_id)
+
+
+def test_inference_batch_does_not_copy_test_soc():
+    import torch
+
+    from physics.parameters import load_vehicle_parameters
+    from training.trainer import make_inference_batch, make_trip_batch
+
+    config = load_config(project_root() / "configs" / "base.yaml")
+    train, test = _trips(config)
+    scaler = TripStandardScaler().fit([train])
+    params = load_vehicle_parameters("configs/vehicle_twizy.yaml")
+    inf = make_inference_batch(test, scaler.transform_trip(test), params, config, torch.device("cpu"))
+    assert inf.d_obs is None
+    assert inf.contains_measured_soc is False
+    train_batch = make_trip_batch(test, scaler.transform_trip(test), params, config, [], torch.device("cpu"), include_state=False)
+    assert train_batch.d_obs is None
+

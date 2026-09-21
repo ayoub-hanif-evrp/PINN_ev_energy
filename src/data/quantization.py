@@ -129,3 +129,17 @@ def combine_quantization(per_trip: list[dict[str, Any]]) -> dict[str, Any]:
             "Not a claim about the unknown BMS quantization process."
         ),
     }
+
+
+def q_from_trips(trips: list[Any]) -> float:
+    """Estimate q from the given trips only (never mix in held-out test SoC)."""
+    per = []
+    for trip in trips:
+        if "soc" not in getattr(trip, "frame", {}):
+            continue
+        per.append(estimate_soc_quantization(trip.frame["soc"]))
+    combined = combine_quantization(per)
+    q = float(combined["q"]) if np.isfinite(combined.get("q", np.nan)) else 0.02
+    if not np.isfinite(q) or q <= 0:
+        return 0.02
+    return q

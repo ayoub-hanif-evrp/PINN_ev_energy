@@ -9,8 +9,10 @@ experiment:
     - physics
     - elasticnet
     - weak_mlp
-    - pinn
+    - mlp_state
+    - pinn_no_dynamics
     - pinn_fulltrip
+    - pinn
 
 training:
   max_epochs: 200

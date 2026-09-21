@@ -41,5 +41,5 @@ def test_mlp_and_pinn_construct():
     x = np.zeros((8, 8), dtype=np.float32)
     p = mlp(torch.tensor(x))
     assert p.shape == (8,)
-    ph, dlt, dh = pinn(torch.tensor(x), torch.zeros(8))
+    ph, dlt, dh = pinn(torch.tensor(x), torch.zeros(8), torch.zeros(8, 2))
     assert ph.shape == dlt.shape == dh.shape == (8,)
