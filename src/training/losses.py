@@ -9,12 +9,25 @@ import torch
 from training.torch_ops import torch_energy_prefix, torch_interval_increments_kwh, torch_window_energy
 
 
-def huber(residual: torch.Tensor, delta: float) -> torch.Tensor:
+def smooth_l1(residual: torch.Tensor, delta: float) -> torch.Tensor:
+    """Smooth L1 / normalized Huber (PyTorch SmoothL1Loss with beta=delta).
+
+    0.5 * r^2 / delta    if |r| <= delta
+    |r| - 0.5 * delta    otherwise
+
+    This is not the classical unscaled Huber loss 0.5 r^2 (|r|<=delta) else
+    delta*(|r|-0.5*delta). The numerical experiment uses this Smooth L1 form.
+    """
     delta_t = max(float(delta), 1e-12)
     abs_r = residual.abs()
     quad = 0.5 * residual * residual / delta_t
     lin = abs_r - 0.5 * delta_t
     return torch.where(abs_r <= delta_t, quad, lin)
+
+
+def huber(residual: torch.Tensor, delta: float) -> torch.Tensor:
+    """Backward-compatible alias. The implemented function is Smooth L1."""
+    return smooth_l1(residual, delta)
 
 
 def scale_balanced_window_loss(
@@ -23,7 +36,7 @@ def scale_balanced_window_loss(
     scales: list[str],
     delta: float,
 ) -> torch.Tensor:
-    """Mean of per-scale Huber means so frequent scales cannot dominate."""
+    """Mean of per-scale Smooth L1 means so frequent scales cannot dominate."""
     if e_pred.numel() == 0:
         return e_pred.sum() * 0.0
     grouped: dict[str, list[int]] = defaultdict(list)
@@ -32,7 +45,7 @@ def scale_balanced_window_loss(
     means = []
     for idxs in grouped.values():
         idx = torch.tensor(idxs, device=e_pred.device, dtype=torch.long)
-        means.append(huber(e_pred[idx] - e_obs[idx], delta).mean())
+        means.append(smooth_l1(e_pred[idx] - e_obs[idx], delta).mean())
     return torch.stack(means).mean()
 
 
@@ -106,7 +119,7 @@ def mlp_state_losses(
     lambdas: dict[str, float],
 ) -> tuple[torch.Tensor, dict[str, float]]:
     l_window = mlp_energy_loss(p_hat, dt_s, starts, ends, e_obs, scales, huber_window)
-    l_state = huber(d_hat - d_obs, huber_state).mean()
+    l_state = smooth_l1(d_hat - d_obs, huber_state).mean()
     total = float(lambdas["lambda_window"]) * l_window + float(lambdas["lambda_state"]) * l_state
     return total, _weighted_logs({"window": l_window, "state": l_state}, lambdas, total)
 
@@ -152,7 +165,7 @@ def pinn_losses(
         l_dyn = p_hat.sum() * 0.0
         dyn_rmse = l_dyn
         dyn_mae = l_dyn
-    l_state = huber(d_hat - d_obs, huber_state).mean()
+    l_state = smooth_l1(d_hat - d_obs, huber_state).mean()
     l_boundary = d_hat[0] * d_hat[0]
     scale = max(float(p_scale_kw), 1e-6)
     l_prior = ((delta_p / scale) ** 2).mean()

@@ -1,5 +1,5 @@
 # Shared experiment configuration
-# Profiles quick.yaml and paper.yaml extend this file.
+# Profiles paper.yaml extends this file.
 
 project:
   name: pinn-ev-energy
@@ -35,6 +35,7 @@ discovery:
     - build
     - tests
     - test
+    - results
   expected_analysed_columns:
     - Date
     - Time
@@ -101,7 +102,7 @@ windows:
   include_full_trip: true
   train_overlap: true
   eval_non_overlapping: true
-  huber_delta_mode: quantization  # quantization | fixed
+  huber_delta_mode: quantization  # Smooth-L1 beta; quantization | fixed. YAML key kept for cache identity.
   huber_delta_kwh: null  # used if mode == fixed
   event_start_stride: 30
 
@@ -148,7 +149,7 @@ training:
   lambda_boundary: 0.0
   lambda_prior: 0.1
   lambda_prior_grid: [0.1]
-  huber_state_delta_pp: 0.1
+  huber_state_delta_pp: 0.1  # Smooth-L1 beta for the depletion/state head (percentage points)
   # Legacy aliases kept so older YAML still merges.
   lambda_energy: 1.0
   lambda_physics: 0.1

@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 """Leave-one-trip-out energy estimation.
 
-Smoke:  python scripts/run_loto.py --config configs/smoke.yaml
-Quick:  python scripts/run_loto.py --config configs/quick.yaml
 Paper:  python scripts/run_loto.py --config configs/paper.yaml
-
-Smoke/quick numbers are pipeline diagnostics, not paper results.
 """
 
 from __future__ import annotations
@@ -25,7 +21,7 @@ from paths import resolve_under_root, project_root  # noqa: E402
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Leave-one-trip-out EV energy experiment.")
-    parser.add_argument("--config", default="configs/quick.yaml")
+    parser.add_argument("--config", default="configs/paper.yaml")
     args = parser.parse_args()
     config = load_config(args.config)
     table = run_loto(config)

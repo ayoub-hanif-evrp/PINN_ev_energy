@@ -1,0 +1,4 @@
+comparison,mean_paired_AE_difference_kWh,CI95_low,CI95_high,n_trips,wilcoxon_p_secondary,note
+PINN vs WeakMLP,-0.18022757947942356,-0.31643857811857123,-0.055778121370846374,17,0.0201568603515625,Negative difference means the first method has lower trip absolute error. Bootstrap intervals are descriptive; they are not called statistically significant.
+PINN vs ElasticNet,0.12761442392738676,0.01444875686746615,0.24183950703353074,17,0.02667236328125,Negative difference means the first method has lower trip absolute error. Bootstrap intervals are descriptive; they are not called statistically significant.
+PINN vs Physics,-0.48463939055280914,-0.6038893525725059,-0.37459994114455786,17,1.52587890625e-05,Negative difference means the first method has lower trip absolute error. Bootstrap intervals are descriptive; they are not called statistically significant.

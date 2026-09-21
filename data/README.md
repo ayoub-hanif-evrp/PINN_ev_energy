@@ -1,32 +1,22 @@
-# Place HELECAR-D here (optional)
+# Dataset placement
 
-A copy of **HELECAR-D** (NaitMalek et al., *Data in Brief*, 2023; CC-BY-4.0) is included at `HELECAR-D/`. Discovery is recursive and does not assume a published folder layout.
+Download **HELECAR-D** (NaitMalek et al., *Data in Brief*, 2023; CC-BY-4.0) and place it so analysed trip CSVs are discoverable from the repository root. Discovery is recursive and does not assume a published folder layout.
 
-Typical local layouts:
+Typical layout:
 
 ```
-data/HELECAR-D/data/Analysed/T1/*.csv
 HELECAR-D/data/Analysed/T1/*.csv
+HELECAR-D/data/Analysed/T2/*.csv
+HELECAR-D/data/Analysed/T3/*.csv
 ```
 
-```
-data/
-  HELECAR-D/
-    data/
-      Analysed/
-        T1/*.csv
-        T2/*.csv
-        T3/*.csv
-      raw/
-        ...
-```
-
-Analysed CSVs are preferred over raw CAN dumps.
+Analysed CSVs are preferred over raw CAN dumps. The root `HELECAR-D/` directory is gitignored and must not be committed. Code and paper artifacts remain in this repository; the dataset retains its own license.
 
 ## Do not
 
 - Rename or overwrite original CSVs in place.
 - Invent missing trips or labels.
 - Point the code at a substitute dataset.
+- Commit raw or analysed HELECAR-D files.
 
-If no HELECAR-D CSVs are found, unit tests still run on synthetic fixtures under `tests/fixtures/`. Experiment scripts will not fabricate paper results.
+If no HELECAR-D CSVs are found, experiment scripts refuse to invent paper metrics.

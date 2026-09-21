@@ -40,18 +40,32 @@ class EnergyWindow:
         return asdict(self)
 
 
+def smooth_l1_delta_kwh(
+    battery_capacity_kwh: float,
+    q: float,
+    mode: str = "quantization",
+    fixed: float | None = None,
+) -> float:
+    """Smooth-L1 beta for window energy, set from SoC quantization scale.
+
+    delta = E_battery * q / 100 when mode is 'quantization'.
+    This is a label-precision scale, not a claim about the BMS process.
+    """
+    if mode == "fixed" and fixed is not None:
+        return float(fixed)
+    if not np.isfinite(q) or q <= 0:
+        return float(battery_capacity_kwh) * 0.02 / 100.0
+    return float(battery_capacity_kwh) * float(q) / 100.0
+
+
 def huber_delta_kwh(
     battery_capacity_kwh: float,
     q: float,
     mode: str = "quantization",
     fixed: float | None = None,
 ) -> float:
-    """Label-precision scale. Not a claim that this equals the BMS process."""
-    if mode == "fixed" and fixed is not None:
-        return float(fixed)
-    if not np.isfinite(q) or q <= 0:
-        return float(battery_capacity_kwh) * 0.02 / 100.0
-    return float(battery_capacity_kwh) * float(q) / 100.0
+    """Backward-compatible alias for smooth_l1_delta_kwh."""
+    return smooth_l1_delta_kwh(battery_capacity_kwh, q, mode=mode, fixed=fixed)
 
 
 def mean_loss_per_scale(scale_to_losses: dict[str, Iterable[float]]) -> float:

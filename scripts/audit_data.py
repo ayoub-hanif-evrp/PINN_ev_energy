@@ -50,7 +50,6 @@ it anywhere inside the project directory, for example:
 
 Analysed files are preferred over raw CAN dumps.
 Original files are never modified.
-Unit tests can still run:  python -m pytest -q
 This script will not fabricate paper results.
 """
 
@@ -350,7 +349,7 @@ def run_audit(config: dict, do_preprocess: bool = True) -> int:
             _print("\nWindows per trip:")
             per_trip = window_frame.groupby(["trip_id", "scale"]).size().unstack(fill_value=0)
             _print(per_trip.to_string())
-            _print(f"  Huber delta hint (kWh) = {huber_delta_kwh(params.battery_capacity_kwh, q)}")
+            _print(f"  Smooth-L1 delta hint (kWh) = {huber_delta_kwh(params.battery_capacity_kwh, q)}")
             per_trip.to_csv(out_dir / "windows_per_trip.csv")
             counts.to_csv(out_dir / "windows_by_scale.csv", header=["n_windows"])
             paper = paper_dataset_summary(processed, params.battery_capacity_kwh, q, config)

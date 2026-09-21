@@ -10,6 +10,6 @@ class PhaseNotImplementedError(NotImplementedError):
 def not_implemented(phase: int, name: str) -> None:
     raise PhaseNotImplementedError(
         f"Phase {phase} ({name}) is not implemented yet. "
-        "Run Phases 1–4 (`python scripts/audit_data.py` and `pytest`) first. "
+        "Run `python scripts/audit_data.py` first. "
         "This stub exists so the paper pipeline cannot fabricate results."
     )

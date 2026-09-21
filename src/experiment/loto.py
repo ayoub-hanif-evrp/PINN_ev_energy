@@ -242,7 +242,7 @@ def run_loto(
                 "q_inner_train": q_inner,
                 "q_outer_train": q_outer,
                 "q_test_posthoc": q_test_posthoc,
-                "q_test_posthoc_note": "Evaluation-only. Never used to control training, windows, or Huber scale.",
+                "q_test_posthoc_note": "Evaluation-only. Never used to control training, windows, or Smooth-L1 scale.",
                 "feature_list": list(MAIN_MODEL_FEATURES),
                 "progress_features": list(PROGRESS_FEATURES),
                 "vehicle_parameters": params.as_dict(),

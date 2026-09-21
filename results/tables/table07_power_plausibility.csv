@@ -1,0 +1,3 @@
+Method,peak_battery_power_kw,p99_abs_battery_kw,frac_exceeding_battery_traction,frac_exceeding_battery_regen,mean_abs_delta_p_kw,max_abs_delta_p_kw,residual_saturation
+Physics,34.16515753460853,11.643138724085796,0.0043425234634447,0.0034206554013915,,,
+PINN,35.044029235839844,12.789888923121431,0.0053441520778259,0.0016079714731722,0.9555123403924624,2.030945062637329,0.0

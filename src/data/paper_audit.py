@@ -62,6 +62,7 @@ def paper_dataset_summary(
         "duration_s_mean": float(np.mean(durs)) if durs else np.nan,
         "distance_can_km_min": float(np.nanmin(dist_can)) if dist_can else np.nan,
         "distance_can_km_max": float(np.nanmax(dist_can)) if dist_can else np.nan,
+        "distance_can_km_mean": float(np.nanmean(dist_can)) if dist_can else np.nan,
         "distance_gps_speed_km_mean": float(np.nanmean(dist_gps)) if dist_gps else np.nan,
         "distance_haversine_km_mean": float(np.nanmean(dist_hav)) if dist_hav else np.nan,
         "soc_start_mean": float(np.mean(soc_start)) if soc_start else np.nan,

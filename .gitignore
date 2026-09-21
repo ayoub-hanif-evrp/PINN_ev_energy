@@ -25,3 +25,9 @@ Thumbs.db
 # Local env
 .env
 *.log
+
+# Runtime experiment dumps (paper artifacts live in results/)
+outputs/
+
+# Local HELECAR-D download (CC-BY-4.0). Do not commit the dataset.
+/HELECAR-D/

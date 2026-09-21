@@ -2,6 +2,7 @@
 """Data-scarcity LOTO: train on n outer-training trips, evaluate the held-out trip.
 
 Physics-only does not depend on n and is recorded once per test trip as a reference.
+Existing rows are reused so additional seeds can be appended without retraining.
 """
 
 from __future__ import annotations
@@ -39,16 +40,32 @@ def _print(msg: str) -> None:
     print(msg, flush=True)
 
 
+def _row_key(method: str, trip_id: str, n_train: int, repeat: int = 0, seed: int = 0) -> tuple[str, str, int, int, int]:
+    return (str(method), str(trip_id), int(n_train), int(repeat), int(seed))
+
+
+def _keys_from_rows(rows: list[dict[str, Any]]) -> set[tuple[str, str, int, int, int]]:
+    keys: set[tuple[str, str, int, int, int]] = set()
+    for row in rows:
+        keys.add(
+            _row_key(
+                str(row.get("method")),
+                str(row.get("trip_id")),
+                int(row.get("n_train", 0)),
+                int(row.get("repeat", 0)),
+                int(row.get("seed", 0)),
+            )
+        )
+    return keys
+
+
 def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
     root = project_root()
     profile = str(config.get("experiment", {}).get("profile", "paper"))
     out_dir = resolve_under_root(config.get("paths", {}).get("scarcity_dir", "outputs/scarcity"), root) / profile
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "manifests").mkdir(exist_ok=True)
-    (out_dir / "cache").mkdir(exist_ok=True)
-    (out_dir / "training_histories").mkdir(exist_ok=True)
-    (out_dir / "loss_diagnostics").mkdir(exist_ok=True)
-    (out_dir / "checkpoints").mkdir(exist_ok=True)
+    for sub in ("manifests", "cache", "training_histories", "loss_diagnostics", "checkpoints"):
+        (out_dir / sub).mkdir(exist_ok=True)
 
     seeds = list(config.get("scarcity", {}).get("seeds") or [config.get("experiment", {}).get("seeds", [0])[0]])
     sizes = list(config.get("scarcity", {}).get("n_train_trips", [3, 5, 8, 12, 16]))
@@ -58,8 +75,14 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
     trips = load_processed(config)
     params = load_vehicle_parameters(config=config)
     by_id = trips_by_id(trips)
-    rows: list[dict[str, Any]] = []
     git_sha = git_commit()
+
+    existing_path = out_dir / "scarcity_per_trip.csv"
+    done = pd.read_csv(existing_path) if existing_path.exists() else pd.DataFrame()
+    rows: list[dict[str, Any]] = [] if done.empty else done.to_dict("records")
+    seen = _keys_from_rows(rows)
+    if not done.empty:
+        _print(f"Resuming scarcity from {existing_path} ({len(done)} existing rows)")
 
     loto_pred_path = resolve_under_root(config.get("paths", {}).get("loto_dir", "outputs/loto"), root) / profile / "per_trip_predictions.csv"
     loto_pred = pd.read_csv(loto_pred_path) if loto_pred_path.exists() else pd.DataFrame()
@@ -69,16 +92,18 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
         for test in trips:
             outer = [t for t in trips if t.trip_id != test.trip_id]
             obs = trip_obs(test, params.battery_capacity_kwh)
-            if "physics" not in {r.get("method") for r in rows if r.get("trip_id") == test.trip_id}:
+            physics_key = _row_key("physics", test.trip_id, 0, 0, 0)
+            if physics_key not in seen and not any(k[0] == "physics" and k[1] == test.trip_id for k in seen):
                 phys = physics_only_predict(test, params)
                 row = trip_energy_row(
-                    test.trip_id, test.trajectory, "physics", seed,
+                    test.trip_id, test.trajectory, "physics", 0,
                     obs["distance_km"], obs["duration_s"], obs["e_obs_kwh"], phys["energy_kwh"],
                 )
                 row["n_train"] = 0
                 row["repeat"] = 0
                 row["subset_ids"] = ""
                 rows.append(row)
+                seen.add(physics_key)
             for n in sizes:
                 repeats = 1 if int(n) >= len(outer) else n_rep
                 for rep in range(repeats):
@@ -101,7 +126,8 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
                         "q_inner_train": q_inner,
                         "q_outer_train": q_outer,
                     }
-                    if "elasticnet" in methods:
+                    enet_key = _row_key("elasticnet", test.trip_id, int(n), int(rep), int(seed))
+                    if "elasticnet" in methods and enet_key not in seen:
                         table = trip_level_feature_table(subset, battery_capacity_kwh=params.battery_capacity_kwh)
                         test_table = trip_level_feature_table([test], battery_capacity_kwh=params.battery_capacity_kwh)
                         model = TripElasticNet(random_state=int(seed)).fit(table)
@@ -113,8 +139,12 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
                         )
                         row.update({"n_train": int(n), "repeat": rep, "subset_ids": ",".join(subset_ids)})
                         rows.append(row)
+                        seen.add(enet_key)
                     for method in methods:
                         if method == "elasticnet":
+                            continue
+                        method_key = _row_key(method, test.trip_id, int(n), int(rep), int(seed))
+                        if method_key in seen:
                             continue
                         reused = None
                         if int(n) >= len(outer) and not loto_pred.empty:
@@ -132,6 +162,7 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
                             )
                             row.update({"n_train": int(n), "repeat": rep, "subset_ids": ",".join(subset_ids), "reused_loto": True})
                             rows.append(row)
+                            seen.add(method_key)
                             continue
                         kind = method_kind(method)
                         result = _run_neural_fold(
@@ -161,14 +192,19 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
                         )
                         row.update({"n_train": int(n), "repeat": rep, "subset_ids": ",".join(subset_ids)})
                         rows.append(row)
+                        seen.add(method_key)
                     (out_dir / "manifests" / f"{test.trip_id}__n{n}__r{rep}__seed{seed}.json").write_text(
                         json.dumps(manifest, indent=2, default=str), encoding="utf-8"
                     )
                     _print(f"scarcity test={test.trip_id} n={n} rep={rep} seed={seed} subset={subset_ids}")
+                    pd.DataFrame(rows).to_csv(out_dir / "scarcity_per_trip.csv", index=False)
 
     table = pd.DataFrame(rows)
     table.to_csv(out_dir / "scarcity_per_trip.csv", index=False)
-    write_manifest(out_dir / "manifest.json", {"stage": "data_scarcity", "profile": profile, "sizes": sizes, "n_repeats": n_rep})
+    write_manifest(
+        out_dir / "manifest.json",
+        {"stage": "data_scarcity", "profile": profile, "sizes": sizes, "n_repeats": n_rep, "seeds": seeds},
+    )
     _print(f"Wrote scarcity outputs to {out_dir}")
     return table
 

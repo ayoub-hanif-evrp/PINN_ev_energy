@@ -16,7 +16,7 @@ def load_processed(config: dict[str, Any]) -> list[ProcessedTrip]:
     if discovery.n_selected == 0:
         raise SystemExit(
             "No HELECAR-D analysed trips found. Download the dataset locally "
-            "(do not commit it) and re-run."
+            "(do not commit it; see data/README.md) and re-run."
         )
     raw = load_selected_trips(discovery.selected)
     return preprocess_trips(raw, config)

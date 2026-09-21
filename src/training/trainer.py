@@ -226,6 +226,7 @@ def _lambdas(config: dict[str, Any], kind: str, lambda_prior: float | None = Non
 
 
 def _huber_window(config: dict[str, Any], q: float, battery_capacity_kwh: float) -> float:
+    """Smooth-L1 beta for window energy. YAML key names are unchanged for cache identity."""
     wcfg = config.get("windows", {})
     return huber_delta_kwh(
         battery_capacity_kwh,

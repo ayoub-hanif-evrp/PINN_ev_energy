@@ -1,0 +1,15 @@
+family,setting,physics_MAE_kWh,note
+battery_capacity,5.5 kWh,0.5587478065913524,E_obs scales with assumed usable capacity. Physics energy does not. PINN P_hat from the 6.0 kWh protocol is not retrained.
+battery_capacity,6.0 kWh,0.7795536889442934,E_obs scales with assumed usable capacity. Physics energy does not. PINN P_hat from the 6.0 kWh protocol is not retrained.
+battery_capacity,6.5 kWh,1.0003595712972344,E_obs scales with assumed usable capacity. Physics energy does not. PINN P_hat from the 6.0 kWh protocol is not retrained.
+physical_parameter,Crr,0.7795536889442934,"MAE range 0.963–0.594 kWh over [0.008, 0.016]; modelling assumption, not a HELECAR measurement"
+physical_parameter,auxiliary_power_kw,0.7795536889442934,"MAE range 0.871–0.597 kWh over [0.1, 0.4]; modelling assumption, not a HELECAR measurement"
+physical_parameter,cda_m2,0.7795536889442934,"MAE range 0.933–0.602 kWh over [0.5, 0.8]; modelling assumption, not a HELECAR measurement"
+physical_parameter,eta_drive,0.7795536889442934,"MAE range 0.537–0.971 kWh over [0.75, 0.95]; modelling assumption, not a HELECAR measurement"
+physical_parameter,eta_regen,0.7795536889442934,"MAE range 0.713–0.846 kWh over [0.2, 0.6]; modelling assumption, not a HELECAR measurement"
+physical_parameter,mass_kg,0.7795536889442934,"MAE range 0.877–0.681 kWh over [494.1, 603.9000000000001]; modelling assumption, not a HELECAR measurement"
+preprocessing,speed/altitude smoother windows,0.7837434706665227,physics MAE min=0.755 max=0.826 kWh
+physical_power_bounds,physics / physics,0.7795536889442934,Wheel-power clamp sensitivity; main protocol remains unbounded.
+physical_power_bounds,physics_bounded_wheel / physics,0.7834670840953679,Wheel-power clamp sensitivity; main protocol remains unbounded.
+physical_power_bounds,unbounded_protocol_pinn / pinn,0.2949142983914842,Wheel-power clamp sensitivity; main protocol remains unbounded.
+physical_power_bounds,unbounded_protocol_physics / physics,0.7795536889442934,Wheel-power clamp sensitivity; main protocol remains unbounded.
