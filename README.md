@@ -41,7 +41,7 @@ This is a **discrete-time physics-informed neural network**, not an automatic-di
 
 ## Dataset
 
-Intended dataset: **HELECAR-D** (NaitMalek et al., Data in Brief, 2023; CC-BY-4.0). Download it locally and place it anywhere inside this project directory. Discovery is recursive and does **not** assume a published folder layout. The dataset directory `HELECAR-D/` is gitignored and should not be committed.
+Intended dataset: **HELECAR-D** (NaitMalek et al., Data in Brief, 2023; CC-BY-4.0). A copy is included at `HELECAR-D/`. Discovery is recursive and does **not** assume a published folder layout.
 
 The copy currently documented with the paper typically contains 17 analysed trips across trajectories T1, T2 and T3. Counts are **measured at runtime**, never hard-coded as a correctness requirement.
 
@@ -127,4 +127,4 @@ Every audit/experiment run writes a manifest (timestamp, config, file names, has
 
 ## License
 
-Research code is released under the MIT License (`LICENSE`). HELECAR-D retains its own CC-BY-4.0 license and is not redistributed in this repository.
+Research code is released under the MIT License (`LICENSE`). HELECAR-D is redistributed here under its original CC-BY-4.0 license (`HELECAR-D/LICENSE.md`).

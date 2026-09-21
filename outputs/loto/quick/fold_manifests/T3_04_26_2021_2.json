@@ -1,0 +1,112 @@
+{
+  "test_id": "T3_04_26_2021_2",
+  "train_ids": [
+    "T1_03_29_2021",
+    "T1_06_30_2021_1",
+    "T1_06_30_2021_2",
+    "T1_07_01_2021",
+    "T2_03_29_2021",
+    "T2_03_30_2021",
+    "T2_04_26_2021",
+    "T3_04_22_2021_1",
+    "T3_04_22_2021_2",
+    "T3_04_26_2021_1",
+    "T3_05_25_2021_04",
+    "T3_05_25_2021_1",
+    "T3_05_25_2021_2",
+    "T3_05_25_2021_3",
+    "T3_05_31_2021",
+    "T3_06_07_2021"
+  ],
+  "inner_train_ids": [
+    "T1_03_29_2021",
+    "T1_06_30_2021_2",
+    "T1_07_01_2021",
+    "T2_03_29_2021",
+    "T2_03_30_2021",
+    "T2_04_26_2021",
+    "T3_04_22_2021_1",
+    "T3_04_22_2021_2",
+    "T3_04_26_2021_1",
+    "T3_05_25_2021_04",
+    "T3_05_25_2021_1",
+    "T3_05_25_2021_2",
+    "T3_05_25_2021_3",
+    "T3_05_31_2021",
+    "T3_06_07_2021"
+  ],
+  "val_id": "T1_06_30_2021_1",
+  "scaler_trip_ids": [
+    "T1_03_29_2021",
+    "T1_06_30_2021_2",
+    "T1_07_01_2021",
+    "T2_03_29_2021",
+    "T2_03_30_2021",
+    "T2_04_26_2021",
+    "T3_04_22_2021_1",
+    "T3_04_22_2021_2",
+    "T3_04_26_2021_1",
+    "T3_05_25_2021_04",
+    "T3_05_25_2021_1",
+    "T3_05_25_2021_2",
+    "T3_05_25_2021_3",
+    "T3_05_31_2021",
+    "T3_06_07_2021"
+  ],
+  "methods": {
+    "constant": {
+      "mean_wh_per_km": 88.23221322906514,
+      "predicted_energy_kwh": 1.3810385416621864
+    },
+    "physics": {
+      "predicted_energy_kwh": 1.1209338597467944
+    },
+    "elasticnet": {
+      "best_params": {
+        "family": "elasticnet",
+        "model__alpha": 0.1,
+        "model__l1_ratio": 1.0
+      },
+      "predicted_energy_kwh": 1.687161093113117
+    },
+    "weak_mlp": {
+      "best_epoch": 7,
+      "best_val_mae": 0.021499281749129295,
+      "predicted_energy_kwh": 1.4144275744424926,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 1.0,
+        "lambda_state": 0.1,
+        "lambda_boundary": 1.0,
+        "lambda_prior": 0.1
+      }
+    },
+    "pinn": {
+      "best_epoch": 16,
+      "best_val_mae": 0.014951175078749657,
+      "predicted_energy_kwh": 1.3811617569790946,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 1.0,
+        "lambda_state": 0.1,
+        "lambda_boundary": 1.0,
+        "lambda_prior": 0.1
+      }
+    },
+    "pinn_fulltrip": {
+      "best_epoch": 5,
+      "best_val_mae": 0.004168510437011719,
+      "predicted_energy_kwh": 1.3959694327827958,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 1.0,
+        "lambda_state": 0.1,
+        "lambda_boundary": 1.0,
+        "lambda_prior": 0.1
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+HELECAR-D audit report
+selected_trips=17
+trajectory_counts={'T1': 4, 'T2': 3, 'T3': 10}
+estimated_soc_q=0.02
+modes={'N': 10130, 'D': 45401, 'R': 114}
+original_files_not_modified=true

@@ -1,0 +1,24 @@
+{
+  "profile": "paper",
+  "out_dir": "C:\\Users\\AYOUB\\OneDrive - EMSI\\Bureau\\PHD_WORK\\PINN_ev_energy\\outputs\\loto\\paper",
+  "flags": [],
+  "n_rows": 408,
+  "methods": [
+    "constant",
+    "elasticnet",
+    "mlp_state",
+    "physics",
+    "pinn",
+    "pinn_fulltrip",
+    "pinn_no_dynamics",
+    "weak_mlp"
+  ],
+  "n_trips": 17,
+  "n_seeds": 3,
+  "n_negative_predicted_energy": 0,
+  "n_absurd_power": 0,
+  "n_saturated": 0,
+  "n_manifests": 51,
+  "n_recorded_failures": 0,
+  "ok": true
+}

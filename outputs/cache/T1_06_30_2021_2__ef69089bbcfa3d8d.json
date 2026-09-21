@@ -1,0 +1,52 @@
+{
+  "trip_id": "T1_06_30_2021_2",
+  "trajectory": "T1",
+  "source_path": "C:\\Users\\AYOUB\\OneDrive - EMSI\\Bureau\\PHD_WORK\\PINN_ev_energy\\HELECAR-D\\data\\Analysed\\T1\\T1_06_30_2021_2.csv",
+  "kind": "analysed",
+  "n_rows": 5903,
+  "notes": [
+    "implausible_gps_jumps_zeroed=2"
+  ],
+  "stats": {
+    "dt": {
+      "n_nonpositive_dt": 0,
+      "n_duplicate_timestamps": 0,
+      "n_gaps_gt_2s": 0,
+      "fallback_dt_s": 1.0,
+      "n_intervals": 5902,
+      "duration_s": 5902.0
+    },
+    "grade": {
+      "n_small_ds": 15,
+      "n_invalid": 0,
+      "n_clipped": 68,
+      "clip_fraction": 0.011519566322209046,
+      "grade_clip": 0.2,
+      "spatial_window_m": 40.0,
+      "ds_min_m": 5.0,
+      "grade_raw_min": -0.3686368309192247,
+      "grade_raw_max": 0.6678212677336851
+    },
+    "distance_m": 44347.602777777494,
+    "distance_can_m": 44347.602777777494,
+    "distance_gps_speed_m": 44545.62076333426,
+    "distance_haversine_m": 46388.86752866634,
+    "duration_s": 5902.0,
+    "n_rows": 5903,
+    "main_features": [
+      "speed_mps",
+      "acc_mps2",
+      "theta_rad",
+      "temperature_c",
+      "humidity_pct",
+      "wind_speed_mps",
+      "traffic",
+      "speed_limit_mps"
+    ],
+    "savgol_window": 11,
+    "savgol_polyorder": 2,
+    "wind_used_as_headwind": false,
+    "n_implausible_gps_jumps": 2
+  },
+  "config_fingerprint": "ef69089bbcfa3d8d"
+}

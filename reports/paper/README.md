@@ -1,6 +1,6 @@
 # Paper review artifacts
 
-Lightweight copies of experimental summaries. No HELECAR-D CSVs, checkpoints, or caches.
+Lightweight copies of experimental summaries. Full run artifacts live under `outputs/`; the dataset copy lives under `HELECAR-D/`.
 
 Profile: `paper` (frozen protocol). Last committed SHA at protocol freeze: `9bae16f`. The pipeline that produced these numbers is in the working tree and has not been committed yet.
 

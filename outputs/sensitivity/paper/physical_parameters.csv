@@ -1,0 +1,19 @@
+parameter,value,nominal,physics_mae_kwh,physics_bias_kwh,delta_mae_vs_nominal,provenance
+mass_kg,494.1,549.0,0.8774043039162595,-0.8774043039162595,0.09785061497196601,modelling assumption; not a HELECAR-D measurement
+mass_kg,549.0,549.0,0.7795536889442934,-0.7795536889442934,0.0,modelling assumption; not a HELECAR-D measurement
+mass_kg,603.9000000000001,549.0,0.681313520845351,-0.681313520845351,-0.09824016809894243,modelling assumption; not a HELECAR-D measurement
+Crr,0.008,0.012,0.9626664444387768,-0.9626664444387768,0.18311275549448336,modelling assumption; not a HELECAR-D measurement
+Crr,0.012,0.012,0.7795536889442934,-0.7795536889442934,0.0,modelling assumption; not a HELECAR-D measurement
+Crr,0.016,0.012,0.5936491463569034,-0.5936491463569034,-0.1859045425873901,modelling assumption; not a HELECAR-D measurement
+cda_m2,0.5,0.64,0.933326593963178,-0.933326593963178,0.15377290501888452,modelling assumption; not a HELECAR-D measurement
+cda_m2,0.64,0.64,0.7795536889442934,-0.7795536889442934,0.0,modelling assumption; not a HELECAR-D measurement
+cda_m2,0.8,0.64,0.6016300093544489,-0.6016300093544489,-0.17792367958984456,modelling assumption; not a HELECAR-D measurement
+eta_drive,0.75,0.85,0.5367085061106897,-0.5367085061106897,-0.2428451828336038,modelling assumption; not a HELECAR-D measurement
+eta_drive,0.85,0.85,0.7795536889442934,-0.7795536889442934,0.0,modelling assumption; not a HELECAR-D measurement
+eta_drive,0.95,0.85,0.9712735701287173,-0.9712735701287173,0.19171988118442385,modelling assumption; not a HELECAR-D measurement
+eta_regen,0.2,0.4,0.712769500349401,-0.712769500349401,-0.06678418859489244,modelling assumption; not a HELECAR-D measurement
+eta_regen,0.4,0.4,0.7795536889442934,-0.7795536889442934,0.0,modelling assumption; not a HELECAR-D measurement
+eta_regen,0.6,0.4,0.8463378775391857,-0.8463378775391857,0.06678418859489221,modelling assumption; not a HELECAR-D measurement
+auxiliary_power_kw,0.1,0.2,0.8707268915586726,-0.8707268915586726,0.09117320261437911,modelling assumption; not a HELECAR-D measurement
+auxiliary_power_kw,0.2,0.2,0.7795536889442934,-0.7795536889442934,0.0,modelling assumption; not a HELECAR-D measurement
+auxiliary_power_kw,0.4,0.2,0.597207283715535,-0.597207283715535,-0.18234640522875845,modelling assumption; not a HELECAR-D measurement
