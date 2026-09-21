@@ -338,8 +338,20 @@ def run_audit(config: dict, do_preprocess: bool = True) -> int:
         if window_frame.empty:
             _print("  none")
         else:
-            _print(window_frame.groupby("scale").size().to_string())
+            counts = window_frame.groupby("scale").size().reindex(
+                [c for c in ["soc_event_0.1", "soc_event_0.2", "soc_event_0.5", "time_60s", "time_120s", "time_300s", "time_600s", "full_trip"] if c in set(window_frame["scale"])]
+                + [c for c in sorted(window_frame["scale"].unique()) if c not in {"soc_event_0.1", "soc_event_0.2", "soc_event_0.5", "time_60s", "time_120s", "time_300s", "time_600s", "full_trip"}]
+            )
+            _print(f"{'scale':<22} windows")
+            _print("-" * 32)
+            for scale, nwin in counts.items():
+                _print(f"{scale:<22} {int(nwin)}")
+            _print("\nWindows per trip:")
+            per_trip = window_frame.groupby(["trip_id", "scale"]).size().unstack(fill_value=0)
+            _print(per_trip.to_string())
             _print(f"  Huber delta hint (kWh) = {huber_delta_kwh(params.battery_capacity_kwh, q)}")
+            per_trip.to_csv(out_dir / "windows_per_trip.csv")
+            counts.to_csv(out_dir / "windows_by_scale.csv", header=["n_windows"])
 
         plot_trip_overview(processed, out_dir / "dataset_overview.png")
         plot_method_diagram(out_dir / "method_diagram.png")

@@ -37,7 +37,10 @@ def load_config(path: str | Path) -> dict[str, Any]:
     cfg_path = resolve_under_root(path, root)
     raw = load_yaml(cfg_path)
     if "extends" in raw:
-        parent = load_config(raw["extends"])
+        ext = raw["extends"]
+        sibling = cfg_path.parent / ext
+        parent_path = sibling if sibling.exists() else ext
+        parent = load_config(parent_path)
         merged = _deep_merge(parent, raw)
     else:
         merged = raw

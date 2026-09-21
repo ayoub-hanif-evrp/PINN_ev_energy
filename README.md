@@ -39,7 +39,11 @@ longitudinal physics ------+
 | 2 | SI preprocessing, acceleration, distance, grade | Implemented |
 | 3 | Physics-only vehicle model | Implemented |
 | 4 | Quantization-aware energy windows | Implemented |
-| 5–13 | Baselines, MLP, PINN, LOTO, ablations, scarcity, figures | Stubs only |
+| 5 | Constant / physics / ElasticNet baselines | Implemented |
+| 6 | Weakly supervised MLP | Implemented |
+| 7 | Discrete-time PINN | Implemented |
+| 8 | Leave-one-trip-out | Implemented (quick profile) |
+| 9–13 | Full ablations, scarcity, paper figures | Stubs / not launched |
 
 ## Dataset
 

@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
+import torch
 
 from models.pinn import PINN
 from models.weak_mlp import WeakMLP
-from phase_status import PhaseNotImplementedError
 from physics.parameters import load_vehicle_parameters
 from physics.vehicle_model import predict_trip_physics
 
@@ -36,8 +35,11 @@ def test_trip_physics_shapes(vehicle_params):
     assert np.isfinite(result.energy_kwh)
 
 
-def test_pinn_and_mlp_are_not_yet_implemented():
-    with pytest.raises(PhaseNotImplementedError):
-        PINN()
-    with pytest.raises(PhaseNotImplementedError):
-        WeakMLP()
+def test_mlp_and_pinn_construct():
+    mlp = WeakMLP()
+    pinn = PINN()
+    x = np.zeros((8, 8), dtype=np.float32)
+    p = mlp(torch.tensor(x))
+    assert p.shape == (8,)
+    ph, dlt, dh = pinn(torch.tensor(x), torch.zeros(8))
+    assert ph.shape == dlt.shape == dh.shape == (8,)

@@ -4,11 +4,19 @@ experiment:
   profile: quick
   seed: 0
   seeds: [0]
+  methods:
+    - constant
+    - physics
+    - elasticnet
+    - weak_mlp
+    - pinn
+    - pinn_fulltrip
 
 training:
   max_epochs: 200
   early_stopping_patience: 40
-  lambda_physics_grid: [0.01, 0.1]
+  lambda_prior_grid: [0.1]
+  lambda_physics_grid: [0.1]
 
 scarcity:
   n_subset_repeats: 2

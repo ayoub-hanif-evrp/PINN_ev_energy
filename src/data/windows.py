@@ -90,6 +90,32 @@ def _window_duration_s(dt: np.ndarray, start: int, end: int) -> float:
     return float(np.nansum(dt[start:end]))
 
 
+def first_joint_soc_event_end(
+    soc: np.ndarray,
+    dt: np.ndarray,
+    start: int,
+    dsoc_min: float,
+    min_duration_s: float,
+) -> int | None:
+    """First endpoint b > start that jointly satisfies duration and |ΔSoC|.
+
+    b* = min { b > a : (t_b - t_a) >= T_min AND |SOC_a - SOC_b| >= ΔSOC_min }
+
+    Do not take the first SoC-threshold crossing and then reject it for being
+    too short. If the threshold is reached at 15 s and T_min = 60 s, keep
+    searching until both constraints hold.
+    """
+    n = len(soc)
+    if start < 0 or start >= n - 1:
+        return None
+    elapsed = 0.0
+    for b in range(start + 1, n):
+        elapsed += float(dt[b - 1])
+        if elapsed >= float(min_duration_s) and abs(float(soc[start]) - float(soc[b])) >= float(dsoc_min):
+            return int(b)
+    return None
+
+
 def generate_trip_windows(
     trip: ProcessedTrip,
     battery_capacity_kwh: float,
@@ -151,14 +177,8 @@ def generate_trip_windows(
             a = int(a)
             if not overlapping and a < last_end:
                 continue
-            target = None
-            for b in range(a + 1, n):
-                if abs(soc[a] - soc[b]) >= thresh:
-                    target = b
-                    break
+            target = first_joint_soc_event_end(soc, dt, a, thresh, min_event_dur)
             if target is None:
-                continue
-            if _window_duration_s(dt, a, target) < min_event_dur:
                 continue
             add_window(a, target, f"soc_event_{thresh}")
             last_end = target

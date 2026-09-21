@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from physics.vehicle_model import observed_energy_kwh
 from data.preprocessing import ProcessedTrip
 from data.schema import (
     ELASTICNET_FEATURES,
@@ -15,6 +16,25 @@ from data.schema import (
     METADATA_COLUMNS,
     SOC_LABEL_COLUMNS,
 )
+
+
+def elevation_gain_loss_from_grade(grade: np.ndarray, ds_m: np.ndarray) -> tuple[float, float]:
+    """Cumulative ascent/descent from grade × spatial increment (OPTION B).
+
+    Grade is rise/run estimated from Savitzky–Golay-smoothed altitude over a
+    spatial window (the same altitude used by the physics model). Haversine
+    ``ds_m`` provides the spatial increment. This is *not* the sum of successive
+    raw GPS altitude differences, which inflate ascent under high-frequency noise.
+
+        dh_i = grade_i * ds_i
+        gain = Σ max(dh_i, 0)
+        loss = Σ max(−dh_i, 0)
+    """
+    dh = np.asarray(grade, dtype=float) * np.asarray(ds_m, dtype=float)
+    dh = np.where(np.isfinite(dh), dh, 0.0)
+    gain = float(np.sum(np.clip(dh, 0.0, None)))
+    loss = float(np.sum(np.clip(-dh, 0.0, None)))
+    return gain, loss
 
 
 def sample_feature_frame(trip: ProcessedTrip, feature_names: tuple[str, ...] | None = None) -> pd.DataFrame:
@@ -28,7 +48,7 @@ def sample_feature_frame(trip: ProcessedTrip, feature_names: tuple[str, ...] | N
     return trip.frame[names].copy()
 
 
-def trip_level_features(trip: ProcessedTrip) -> dict[str, Any]:
+def trip_level_features(trip: ProcessedTrip, battery_capacity_kwh: float = 6.0) -> dict[str, Any]:
     """Trip summaries. SoC fields are labels only; they are not ElasticNet predictors."""
     df = trip.frame
     speed = df["speed_mps"].to_numpy(dtype=float)
@@ -43,9 +63,11 @@ def trip_level_features(trip: ProcessedTrip) -> dict[str, Any]:
     idle = speed < 0.5
     pos_acc = acc > 0.3
     neg_acc = acc < -0.3
-    dg = np.diff(df["alt_m"].to_numpy(dtype=float), prepend=df["alt_m"].iloc[0] if len(df) else 0.0)
-    elev_gain = float(np.sum(np.clip(dg, 0.0, None)))
-    elev_loss = float(np.sum(np.clip(-dg, 0.0, None)))
+    if "ds_m" in df.columns:
+        ds = df["ds_m"].to_numpy(dtype=float)
+    else:
+        ds = np.zeros(len(df), dtype=float)
+    elev_gain, elev_loss = elevation_gain_loss_from_grade(grade, ds)
 
     out: dict[str, Any] = {
         "trip_id": trip.trip_id,
@@ -83,11 +105,15 @@ def trip_level_features(trip: ProcessedTrip) -> dict[str, Any]:
         out["soc_start"] = float(soc.iloc[0])
         out["soc_end"] = float(soc.iloc[-1])
         out["soc_delta"] = float(soc.iloc[0] - soc.iloc[-1])
+        out["e_obs_kwh"] = observed_energy_kwh(out["soc_start"], out["soc_end"], battery_capacity_kwh)
     return out
 
 
-def trip_level_feature_table(trips: list[ProcessedTrip]) -> pd.DataFrame:
-    return pd.DataFrame([trip_level_features(t) for t in trips])
+def trip_level_feature_table(
+    trips: list[ProcessedTrip],
+    battery_capacity_kwh: float = 6.0,
+) -> pd.DataFrame:
+    return pd.DataFrame([trip_level_features(t, battery_capacity_kwh=battery_capacity_kwh) for t in trips])
 
 
 def is_soc_derived_column(name: str) -> bool:
@@ -114,7 +140,7 @@ def elasticnet_feature_matrix(table: pd.DataFrame) -> pd.DataFrame:
     return x
 
 
-def elasticnet_target(table: pd.DataFrame, column: str = "soc_delta") -> pd.Series:
+def elasticnet_target(table: pd.DataFrame, column: str = "e_obs_kwh") -> pd.Series:
     if column not in table.columns:
         raise KeyError(f"Target column {column} is not in the trip table.")
     if column in ELASTICNET_FEATURES:

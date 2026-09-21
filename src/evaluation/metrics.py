@@ -61,3 +61,57 @@ def soc_reconstruction_metrics(
         "soc_within_half_q_fraction": float(within),
         "soc_tolerance_pp": float(tol) if np.isfinite(tol) else np.nan,
     }
+
+
+def trip_energy_row(
+    trip_id: str,
+    trajectory: str,
+    method: str,
+    seed: int,
+    distance_km: float,
+    duration_s: float,
+    observed_energy_kwh: float,
+    predicted_energy_kwh: float,
+) -> dict[str, float | str | int]:
+    obs = float(observed_energy_kwh)
+    pred = float(predicted_energy_kwh)
+    signed = pred - obs
+    abs_err = abs(signed)
+    pct = 100.0 * signed / obs if abs(obs) > 1e-12 else float("nan")
+    return {
+        "trip_id": trip_id,
+        "trajectory": trajectory,
+        "method": method,
+        "seed": int(seed),
+        "distance_km": float(distance_km),
+        "duration_s": float(duration_s),
+        "observed_energy_kwh": obs,
+        "predicted_energy_kwh": pred,
+        "signed_error_kwh": signed,
+        "absolute_error_kwh": abs_err,
+        "percentage_error": pct,
+    }
+
+
+def summarize_energy_table(frame) -> dict[str, dict[str, float]]:
+    import pandas as pd
+
+    if not isinstance(frame, pd.DataFrame) or frame.empty:
+        return {}
+    out: dict[str, dict[str, float]] = {}
+    for method, sub in frame.groupby("method"):
+        y = sub["observed_energy_kwh"].to_numpy(dtype=float)
+        yhat = sub["predicted_energy_kwh"].to_numpy(dtype=float)
+        err = yhat - y
+        denom = float(np.sum((y - np.mean(y)) ** 2))
+        r2 = 1.0 - float(np.sum(err**2) / denom) if denom > 1e-12 else float("nan")
+        ratio = np.abs(err / np.where(np.abs(y) > 1e-12, y, np.nan))
+        out[str(method)] = {
+            "n": float(len(sub)),
+            "mae_kwh": float(np.mean(np.abs(err))),
+            "rmse_kwh": float(np.sqrt(np.mean(err**2))),
+            "mape_pct": float(np.nanmean(ratio) * 100.0),
+            "bias_kwh": float(np.mean(err)),
+            "r2": r2,
+        }
+    return out

@@ -39,7 +39,8 @@ class TripStandardScaler:
         if self.mean_ is None or self.std_ is None:
             raise RuntimeError("Scaler has not been fit.")
         x = frame.loc[:, list(self.columns)].to_numpy(dtype=float)
-        return (x - self.mean_) / self.std_
+        scaled = (x - self.mean_) / self.std_
+        return np.nan_to_num(scaled, nan=0.0, posinf=0.0, neginf=0.0)
 
     def transform_trip(self, trip: ProcessedTrip) -> np.ndarray:
         return self.transform_frame(trip.frame)

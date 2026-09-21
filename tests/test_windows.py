@@ -5,11 +5,14 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
 from config import load_config
 from data.loader import load_trip_csv
 from data.preprocessing import preprocess_trip
 from data.quantization import estimate_soc_quantization
-from data.windows import generate_trip_windows, generate_windows
+from data.windows import first_joint_soc_event_end, generate_trip_windows, generate_windows
 from paths import project_root
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -60,6 +63,54 @@ def test_soc_event_windows_use_absolute_percent_thresholds():
         assert abs(w.dsoc) + 1e-9 >= thresh
         # Must not be a 1q/2q/3q label (q≈0.02).
         assert not w.scale.startswith("soc_event_k")
+
+
+def test_joint_search_uses_later_endpoint_when_threshold_is_early():
+    soc = np.full(121, 80.0)
+    soc[10:] = 79.8  # 0.2 pp drop at 10 s
+    dt = np.zeros(121)
+    dt[:-1] = 1.0
+    b = first_joint_soc_event_end(soc, dt, 0, dsoc_min=0.1, min_duration_s=60.0)
+    assert b == 60
+    assert abs(soc[0] - soc[b]) >= 0.1
+    assert float(np.sum(dt[0:b])) >= 60.0
+
+
+def test_joint_search_none_when_duration_never_met():
+    soc = np.full(31, 80.0)
+    soc[10:] = 79.8
+    dt = np.zeros(31)
+    dt[:-1] = 1.0
+    assert first_joint_soc_event_end(soc, dt, 0, 0.1, 60.0) is None
+
+
+def test_joint_search_none_when_soc_threshold_never_met():
+    soc = np.full(121, 80.0)
+    soc[-1] = 79.95  # 0.05 pp, below 0.1
+    dt = np.zeros(121)
+    dt[:-1] = 1.0
+    assert first_joint_soc_event_end(soc, dt, 0, 0.1, 60.0) is None
+
+
+def test_generated_soc_event_satisfies_both_constraints():
+    from data.preprocessing import ProcessedTrip
+
+    n = 121
+    dt = np.zeros(n)
+    dt[:-1] = 1.0
+    soc = np.full(n, 80.0)
+    soc[10:] = 79.8
+    frame = pd.DataFrame({"soc": soc, "dt_s": dt, "s_can_m": np.cumsum(dt) * 10.0})
+    trip = ProcessedTrip("synth", "T1", Path("synth.csv"), "analysed", frame)
+    config = {"windows": {"soc_event_dsoc_pct": [0.1], "soc_event_min_duration_s": 60.0, "fixed_time_s": [], "include_full_trip": False, "event_start_stride": 1000}}
+    windows = generate_trip_windows(trip, 6.0, 0.02, config=config, overlapping=False)
+    events = [w for w in windows if w.scale.startswith("soc_event")]
+    assert events
+    for w in events:
+        assert w.duration_s + 1e-9 >= 60.0
+        assert abs(w.dsoc) + 1e-9 >= 0.1
+        assert w.end < n
+        assert w.start >= 0
 
 
 def test_full_trip_window_present():

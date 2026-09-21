@@ -117,6 +117,13 @@ experiment:
   seed: 0
   seeds: [0]
   device: cpu
+  methods:
+    - constant
+    - physics
+    - elasticnet
+    - weak_mlp
+    - pinn
+    - pinn_fulltrip
 
 training:
   # Used from Phase 6 onward. Stored now so later phases do not invent a schema.
@@ -128,10 +135,21 @@ training:
   hidden_layers: [64, 64, 64]
   activation: tanh
   residual_limit_kw: 4.0
+  mlp_power_center_kw: 5.0
+  mlp_power_half_range_kw: 30.0
+  # Discrete-time PINN loss weights. Names match the terms in L.
+  lambda_window: 1.0
+  lambda_dynamics: 1.0
+  lambda_state: 0.1
+  lambda_boundary: 1.0
+  lambda_prior: 0.1
+  lambda_prior_grid: [0.1]
+  huber_state_delta_pp: 0.1
+  # Legacy aliases kept so older YAML still merges.
   lambda_energy: 1.0
   lambda_physics: 0.1
   lambda_smooth: 0.0
-  lambda_physics_grid: [0.001, 0.01, 0.1, 1.0]
+  lambda_physics_grid: [0.1]
 
 scarcity:
   n_train_trips: [3, 5, 8, 12, 16]

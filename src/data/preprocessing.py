@@ -198,11 +198,12 @@ def estimate_grade(
     grade_clip: float,
     alt_savgol_window: int,
     alt_savgol_polyorder: int,
-) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
     """
     Robust GPS grade: smooth altitude, then dh/ds over a spatial interval.
 
     theta = atan(dh/ds). Never divide by near-zero distance.
+    Returns (theta, grade_clipped, alt_smooth, stats).
     """
     n = len(altitude_m)
     alt_s = smooth_series(altitude_m, alt_savgol_window, alt_savgol_polyorder)
@@ -254,7 +255,7 @@ def estimate_grade(
         "grade_raw_min": float(np.nanmin(grade)) if n else np.nan,
         "grade_raw_max": float(np.nanmax(grade)) if n else np.nan,
     }
-    return theta, grade_clipped, stats
+    return theta, grade_clipped, alt_s, stats
 
 
 def acceleration_from_speed(
@@ -367,7 +368,7 @@ def preprocess_trip(trip: TripRecord, config: dict[str, Any]) -> ProcessedTrip:
     # Trip distance / Wh/km uses integrated CAN speed, not sparse GPS fixes.
     frame["distance_km"] = s_can / 1000.0
 
-    theta, grade, grade_stats = estimate_grade(
+    theta, grade, alt_smooth, grade_stats = estimate_grade(
         alt,
         s_hav,
         spatial_window_m=float(pre.get("grade_spatial_window_m", 40.0)),
@@ -377,6 +378,7 @@ def preprocess_trip(trip: TripRecord, config: dict[str, Any]) -> ProcessedTrip:
         alt_savgol_polyorder=int(pre.get("altitude_savgol_polyorder", 2)),
     )
     frame["alt_m"] = alt
+    frame["alt_smooth_m"] = alt_smooth
     frame["grade"] = grade
     frame["theta_rad"] = theta
     frame["theta_deg"] = np.rad2deg(theta)
