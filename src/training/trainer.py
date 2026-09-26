@@ -1,4 +1,4 @@
-"""Neural trainers for WeakMLP, MLP_STATE, and the discrete-time PINN.
+"""Neural trainers for the data-driven MLP and the discrete-time PINN.
 
 Scaler fitting, early stopping, q, and lambda selection use training/inner
 validation trips only. The outer test trip is never an input to those procedures.

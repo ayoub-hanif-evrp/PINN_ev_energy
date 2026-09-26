@@ -6,7 +6,7 @@ experiment:
   seeds: [0, 1, 2]
   methods:
     - physics
-    - elasticnet
+    - ridge
     - weak_mlp
     - pinn
 
@@ -20,6 +20,6 @@ scarcity:
   n_subset_repeats: 3
   seeds: [0, 1, 2]
   methods:
-    - elasticnet
+    - ridge
     - weak_mlp
     - pinn

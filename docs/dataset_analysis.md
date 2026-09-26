@@ -3,7 +3,7 @@
 Standalone descriptive analysis of the analysed HELECAR-D trips used in this repository.
 Numbers are taken from the existing local data audit under `outputs/data_audit/` and from the analysed CSV files under `HELECAR-D/data/Analysed/`.
 
-Figures for this report live in [`figures/`](figures/) (PNG, 300 dpi).
+Figures for this report live in [`dataset_figures/`](dataset_figures/) (PNG, 300 dpi).
 
 This document does **not** change the experiment protocol, models, or paper results.
 
@@ -58,7 +58,7 @@ Across the 17 analysed trips there are **55,645** timestamp rows. Drive-mode cou
 
 Example GPS tracks (one clean trip per trajectory; invalid coordinates filtered):
 
-![Example GPS tracks](figures/fig10_example_gps_tracks.png)
+![Example GPS tracks](dataset_figures/fig10_example_gps_tracks.png)
 
 ---
 
@@ -73,13 +73,13 @@ Example GPS tracks (one clean trip per trajectory; invalid coordinates filtered)
 | T3 | ring / higher-speed | 10 | 58.8% |
 | **Total** | | **17** | 100% |
 
-![Trajectory composition](figures/fig12_trajectory_composition.png)
+![Trajectory composition](dataset_figures/fig12_trajectory_composition.png)
 
 T3 dominates **trip count**, but T1 and T2 contribute a large share of **total distance**.
 
 ### 3.2 Duration vs distance
 
-![Distance vs duration](figures/fig01_distance_vs_duration.png)
+![Distance vs duration](dataset_figures/fig01_distance_vs_duration.png)
 
 T3 trips cluster as short/fast segments. T1/T2 are longer mixed/urban drives (up to ~143 min / ~60 km).
 
@@ -134,7 +134,7 @@ E_{\mathrm{obs}} = 6.0\,\mathrm{kWh}\times\frac{\mathrm{SOC}_{\mathrm{start}}-\m
 | Fleet mean intensity | **88.5 Wh/km** |
 | Per-trip Wh/km (median / IQR) | 89.4 / 82.8–102.3 |
 
-![Trip energy and intensity](figures/fig03_energy_and_intensity.png)
+![Trip energy and intensity](dataset_figures/fig03_energy_and_intensity.png)
 
 ### 4.1 By trajectory
 
@@ -161,13 +161,13 @@ Interpretation:
 | Mean | 81.23 | 37.07 | 44.16 |
 | Across trips | 54.6–98.3 | 13.4–79.0 | 18.7–78.9 |
 
-![SoC start vs end](figures/fig02_soc_start_end.png)
+![SoC start vs end](dataset_figures/fig02_soc_start_end.png)
 
 Trips typically start high and finish mid/low. There is no consistent full 0–100% cycle.
 
 Example SoC time series (one trip per trajectory):
 
-![Example SoC traces](figures/fig11_example_soc_traces.png)
+![Example SoC traces](dataset_figures/fig11_example_soc_traces.png)
 
 The step-like appearance of SoC is consistent with quantized BMS reporting.
 
@@ -175,7 +175,7 @@ The step-like appearance of SoC is consistent with quantized BMS reporting.
 
 Successive non-zero SoC transitions are strongly concentrated on multiples of **0.02 percentage points**, not a coarse 1% BMS step.
 
-![SoC transition sizes](figures/fig04_soc_transitions.png)
+![SoC transition sizes](dataset_figures/fig04_soc_transitions.png)
 
 | Transition size (pp) | Count |
 |---:|---:|
@@ -260,7 +260,7 @@ CAN speed is the primary kinematic signal for distance and physics. GPS speed is
 | Best agreement | T3 trips (corr often > 0.90) |
 | Weaker agreement | long T1/T2 urbans (corr ~0.68–0.79) |
 
-![CAN vs GPS speed agreement](figures/fig07_can_vs_gps_speed.png)
+![CAN vs GPS speed agreement](dataset_figures/fig07_can_vs_gps_speed.png)
 
 CAN–GPS disagreement is expected in dense urban GNSS conditions. Using CAN speed for distance is therefore preferable for longitudinal energy modelling.
 
@@ -300,9 +300,9 @@ From preprocessed trip summaries:
 | Mean humidity | 62.7% | 40.4 | 79.2 |
 | Mean wind speed | 3.29 m/s | 0.18 | 7.49 |
 
-![Speed and idle by trajectory](figures/fig05_speed_idle_by_trajectory.png)
+![Speed and idle by trajectory](dataset_figures/fig05_speed_idle_by_trajectory.png)
 
-![Environment covariates](figures/fig06_environment.png)
+![Environment covariates](dataset_figures/fig06_environment.png)
 
 Traffic:
 
@@ -329,7 +329,7 @@ Training-style overlapping multi-window energy constraints derived from SoC:
 | Full trip | 17 |
 | **Total** | **57,671** |
 
-![Supervision window counts](figures/fig08_supervision_windows.png)
+![Supervision window counts](dataset_figures/fig08_supervision_windows.png)
 
 Longer T1/T2 trips dominate the window counts (e.g. `T2_03_29_2021` alone contributes >2,000 SoC-event windows per threshold). Short T3 trips contribute fewer windows but still have non-trivial SoC-event coverage.
 
@@ -344,7 +344,7 @@ Comparing the analytical longitudinal model’s integrated battery energy with S
 | Mean physics residual \(E_{\mathrm{physics}}-E_{\mathrm{obs}}\) | **−0.780 kWh** |
 | Mean absolute residual | 0.780 kWh |
 
-![Physics vs SoC trip energy](figures/fig09_physics_vs_soc_energy.png)
+![Physics vs SoC trip energy](dataset_figures/fig09_physics_vs_soc_energy.png)
 
 Every point lies below the \(y=x\) line: the analytical model **systematically under-predicts** trip energy. Peak instantaneous physics battery power in this diagnostic reaches about **34 kW** on `T2_03_29_2021` (unbounded wheel×speed spikes), which is a plausibility caveat for instantaneous power, not for the existence of a useful trip-energy prior.
 
@@ -371,18 +371,18 @@ This gap between physics and SoC energy is part of the motivation for a residual
 
 | File | Content |
 |---|---|
-| `figures/fig01_distance_vs_duration.png` | Trip duration vs CAN distance |
-| `figures/fig02_soc_start_end.png` | Start vs end SoC |
-| `figures/fig03_energy_and_intensity.png` | Trip energy and Wh/km |
-| `figures/fig04_soc_transitions.png` | SoC transition-size histogram |
-| `figures/fig05_speed_idle_by_trajectory.png` | Mean speed and idle by trajectory |
-| `figures/fig06_environment.png` | Temperature, humidity, wind |
-| `figures/fig07_can_vs_gps_speed.png` | CAN–GPS speed agreement |
-| `figures/fig08_supervision_windows.png` | Multi-window counts |
-| `figures/fig09_physics_vs_soc_energy.png` | Physics vs SoC energy |
-| `figures/fig10_example_gps_tracks.png` | Example GPS tracks (T1/T2/T3) |
-| `figures/fig11_example_soc_traces.png` | Example SoC time series |
-| `figures/fig12_trajectory_composition.png` | Trip-count and distance shares |
+| `dataset_figures/fig01_distance_vs_duration.png` | Trip duration vs CAN distance |
+| `dataset_figures/fig02_soc_start_end.png` | Start vs end SoC |
+| `dataset_figures/fig03_energy_and_intensity.png` | Trip energy and Wh/km |
+| `dataset_figures/fig04_soc_transitions.png` | SoC transition-size histogram |
+| `dataset_figures/fig05_speed_idle_by_trajectory.png` | Mean speed and idle by trajectory |
+| `dataset_figures/fig06_environment.png` | Temperature, humidity, wind |
+| `dataset_figures/fig07_can_vs_gps_speed.png` | CAN–GPS speed agreement |
+| `dataset_figures/fig08_supervision_windows.png` | Multi-window counts |
+| `dataset_figures/fig09_physics_vs_soc_energy.png` | Physics vs SoC energy |
+| `dataset_figures/fig10_example_gps_tracks.png` | Example GPS tracks (T1/T2/T3) |
+| `dataset_figures/fig11_example_soc_traces.png` | Example SoC time series |
+| `dataset_figures/fig12_trajectory_composition.png` | Trip-count and distance shares |
 
 ---
 

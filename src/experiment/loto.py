@@ -30,7 +30,7 @@ from experiment.data import dataset_file_hashes, load_processed, representative_
 from experiment.device import resolve_device, set_seeds
 from manifest import git_commit, package_versions, write_manifest
 from models.baselines import constant_consumption_predict, constant_wh_per_km, physics_only_predict
-from models.elasticnet import TripElasticNet
+from models.ridge import TripRidge
 from paths import project_root, resolve_under_root
 from physics.parameters import VehicleParameters, load_vehicle_parameters
 from physics.vehicle_model import observed_energy_kwh
@@ -180,7 +180,7 @@ def run_loto(
         (out_dir / sub).mkdir(parents=True, exist_ok=True)
 
     seeds = list(seeds if seeds is not None else config.get("experiment", {}).get("seeds", [config.get("experiment", {}).get("seed", 0)]))
-    methods = list(methods if methods is not None else config.get("experiment", {}).get("methods", ["constant", "physics", "elasticnet", "weak_mlp", "pinn"]))
+    methods = list(methods if methods is not None else config.get("experiment", {}).get("methods", ["physics", "ridge", "weak_mlp", "pinn"]))
     device = resolve_device(config)
     config.setdefault("experiment", {})["resolved_device"] = str(device)
     retrain_outer = bool(config.get("experiment", {}).get("retrain_outer", True))
@@ -274,17 +274,17 @@ def run_loto(
                 soc_rows.append({"trip_id": test.trip_id, "method": "physics", "seed": seed, **sm})
                 fold_info["methods"]["physics"] = {"predicted_energy_kwh": phys["energy_kwh"]}
 
-            if "elasticnet" in methods:
+            if "ridge" in methods:
                 train_table = trip_level_feature_table(outer_train, battery_capacity_kwh=params.battery_capacity_kwh)
                 test_table = trip_level_feature_table([test], battery_capacity_kwh=params.battery_capacity_kwh)
-                enet = TripElasticNet(random_state=seed).fit(train_table)
-                enet.assert_not_fitted_on(test.trip_id)
-                pred_e = float(enet.predict(test_table)[0])
-                rows.append(trip_energy_row(test.trip_id, test.trajectory, "elasticnet", seed, obs["distance_km"], obs["duration_s"], obs["e_obs_kwh"], pred_e))
-                fold_info["methods"]["elasticnet"] = {
-                    "best_params": enet.best_params_,
+                ridge = TripRidge().fit(train_table)
+                ridge.assert_not_fitted_on(test.trip_id)
+                pred_e = float(ridge.predict(test_table)[0])
+                rows.append(trip_energy_row(test.trip_id, test.trajectory, "ridge", seed, obs["distance_km"], obs["duration_s"], obs["e_obs_kwh"], pred_e))
+                fold_info["methods"]["ridge"] = {
+                    "best_params": ridge.best_params_,
                     "predicted_energy_kwh": pred_e,
-                    "fitted_trip_ids": list(enet.fitted_trip_ids),
+                    "fitted_trip_ids": list(ridge.fitted_trip_ids),
                 }
 
             neural_methods = [m for m in methods if m in NEURAL_METHODS]

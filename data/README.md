@@ -31,3 +31,5 @@ The root `HELECAR-D/` directory is gitignored. Analysed CSVs are preferred over 
 - Commit raw or analysed HELECAR-D files.
 
 If no HELECAR-D CSVs are found, experiment scripts refuse to invent paper metrics.
+
+A descriptive analysis of the 17 analysed trips used here is in [docs/dataset_analysis.md](../docs/dataset_analysis.md). That note is documentation, not a paper experiment.

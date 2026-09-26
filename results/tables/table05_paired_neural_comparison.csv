@@ -1,0 +1,2 @@
+comparison,n_trips,mean_absolute_error_difference_kwh,bootstrap_CI_low,bootstrap_CI_high,Wilcoxon_p
+PINN - Data-Driven MLP,17,-0.18022757947942356,-0.31643857811857123,-0.055778121370846374,0.0201568603515625

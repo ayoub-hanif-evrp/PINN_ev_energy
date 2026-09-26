@@ -1,11 +1,11 @@
-"""Conference-paper CSV tables. Four tables only."""
+"""Conference-paper CSV tables."""
 
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-from evaluation.bootstrap import bootstrap_mean_ci, trip_absolute_errors
+from evaluation.bootstrap import bootstrap_mean_ci, paired_difference_ci, trip_absolute_errors
 from evaluation.metrics import summarize_energy_table
 from evaluation.names import PAPER_METHODS, SCARCITY_METHODS, label
 
@@ -105,7 +105,7 @@ def table03_scarcity(raw: pd.DataFrame) -> pd.DataFrame:
             g = raw.loc[(raw["method"] == method) & (raw["n_train"] == n)]
             if g.empty:
                 continue
-            run = g.groupby(["seed", "repeat"], dropna=False)["absolute_error_kwh"].mean()
+            run = _replicate_means(g, method)
             rows.append(
                 {
                     "n_train": int(n),
@@ -116,6 +116,26 @@ def table03_scarcity(raw: pd.DataFrame) -> pd.DataFrame:
                 }
             )
     return pd.DataFrame(rows)
+
+
+def _replicate_means(g: pd.DataFrame, method: str) -> pd.Series:
+    """Mean absolute error of each training replicate.
+
+    Neural replicates are (seed, subset repeat). Ridge is deterministic, so
+    identical full-set fits that differ only by a nominal seed are counted once.
+    """
+    if g.empty:
+        return pd.Series(dtype=float)
+    if method == "ridge" and "subset_ids" in g.columns:
+        pieces: list[tuple[tuple[str, ...], float]] = []
+        for (_, _), sub in g.groupby(["seed", "repeat"], dropna=False):
+            signature = tuple(sorted(sub["subset_ids"].astype(str).tolist()))
+            pieces.append((signature, float(sub["absolute_error_kwh"].mean())))
+        unique: dict[tuple[str, ...], float] = {}
+        for signature, mae in pieces:
+            unique[signature] = mae
+        return pd.Series(list(unique.values()), dtype=float)
+    return g.groupby(["seed", "repeat"], dropna=False)["absolute_error_kwh"].mean()
 
 
 def table04_feasibility(raw: pd.DataFrame) -> pd.DataFrame:
@@ -144,3 +164,36 @@ def table04_feasibility(raw: pd.DataFrame) -> pd.DataFrame:
         out["_o"] = out["method"].map(lambda m: order.get(m, 9))
         out = out.sort_values(["reserve_soc_pct", "_o"]).drop(columns="_o")
     return out
+
+
+def table05_paired_neural(pred: pd.DataFrame) -> pd.DataFrame:
+    """PINN absolute error minus Data-Driven MLP absolute error, one value per trip."""
+    if pred.empty:
+        return pred
+    a = trip_absolute_errors(pred, "pinn")
+    b = trip_absolute_errors(pred, "weak_mlp")
+    stats = paired_difference_ci(a, b)
+    try:
+        from scipy.stats import wilcoxon
+
+        aligned = pd.concat([a.rename("a"), b.rename("b")], axis=1, join="inner").dropna()
+        diff = aligned["a"] - aligned["b"]
+        if len(aligned) >= 3 and not (diff == 0).all():
+            _stat, p_value = wilcoxon(diff.to_numpy(), alternative="two-sided", zero_method="wilcox")
+            p_value = float(p_value)
+        else:
+            p_value = 1.0
+    except Exception:
+        p_value = float("nan")
+    return pd.DataFrame(
+        [
+            {
+                "comparison": "PINN - Data-Driven MLP",
+                "n_trips": int(stats["n_trips"]),
+                "mean_absolute_error_difference_kwh": float(stats["mean"]),
+                "bootstrap_CI_low": float(stats["ci_low"]),
+                "bootstrap_CI_high": float(stats["ci_high"]),
+                "Wilcoxon_p": p_value,
+            }
+        ]
+    )

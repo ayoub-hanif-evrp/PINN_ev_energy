@@ -18,7 +18,7 @@ Trip-level energy metrics. MAE confidence intervals are trip-level bootstrap int
 | Method | MAE_kWh | MAE_CI | RMSE_kWh | MAPE_pct | WAPE_pct | Bias_kWh | R2 |
 |---|---:|---|---:|---:|---:|---:|---:|
 | Physics Model | 0.780 | [0.614, 0.948] | 0.854 | 30.06 | 29.42 | -0.780 | 0.508 |
-| Regularized Regression | 0.167 | [0.113, 0.232] | 0.210 | 8.72 | 6.31 | -0.006 | 0.970 |
+| Ridge Regression | 0.368 | [0.229, 0.537] | 0.491 | 16.45 | 13.87 | -0.014 | 0.837 |
 | Data-Driven MLP | 0.475 | [0.312, 0.655] | 0.629 | 16.34 | 17.93 | 0.191 | 0.734 |
 | PINN | 0.295 | [0.209, 0.392] | 0.373 | 11.51 | 11.13 | -0.052 | 0.906 |
 
@@ -28,24 +28,25 @@ Held-out energy MAE as a function of the number of training trips.
 Each complete (method, training size, seed) block is included.
 For n=3,5,8,12 there are three predefined subset repeats; n=16 uses the full outer-training set.
 MAE_kWh is the mean, across training replicates, of the mean absolute error over held-out trips.
-uncertainty is the standard deviation of those replicate-level means (seed x subset repeat).
+uncertainty is the standard deviation of those replicate-level means.
+Neural replicates are seed by subset repeat. Ridge is deterministic, so identical training subsets that differ only by a nominal seed are counted once.
 Seeds are training replicates, not additional trips. The statistical unit remains the held-out trip.
 
 | n_train | method | MAE_kWh | uncertainty | number_of_runs |
 |---:|---|---:|---:|---:|
-| 3 | Regularized Regression | 1.325 | 1.439 | 9 |
+| 3 | Ridge Regression | 2.247 | 1.986 | 9 |
 | 3 | Data-Driven MLP | 0.710 | 0.150 | 9 |
 | 3 | PINN | 0.439 | 0.115 | 9 |
-| 5 | Regularized Regression | 1.712 | 2.837 | 9 |
+| 5 | Ridge Regression | 5.520 | 3.031 | 9 |
 | 5 | Data-Driven MLP | 0.697 | 0.174 | 9 |
 | 5 | PINN | 0.344 | 0.048 | 9 |
-| 8 | Regularized Regression | 1.171 | 1.932 | 9 |
+| 8 | Ridge Regression | 2.031 | 2.521 | 9 |
 | 8 | Data-Driven MLP | 0.434 | 0.080 | 9 |
 | 8 | PINN | 0.297 | 0.065 | 9 |
-| 12 | Regularized Regression | 0.221 | 0.032 | 9 |
+| 12 | Ridge Regression | 0.400 | 0.061 | 9 |
 | 12 | Data-Driven MLP | 0.459 | 0.122 | 9 |
 | 12 | PINN | 0.305 | 0.055 | 9 |
-| 16 | Regularized Regression | 0.167 | 0.000 | 3 |
+| 16 | Ridge Regression | 0.368 | 0.000 | 1 |
 | 16 | Data-Driven MLP | 0.475 | 0.026 | 3 |
 | 16 | PINN | 0.295 | 0.048 | 3 |
 
@@ -68,27 +69,35 @@ Reserve-margin decision errors. This is not an EVRP algorithm.
 
 What the full-data LOTO results support:
 
-- Regularized Regression has the lowest full-data LOTO MAE (0.167 kWh).
+- Ridge Regression full-data LOTO MAE is 0.368 kWh.
 - PINN MAE (0.295 kWh) is substantially lower than Data-Driven MLP (0.475 kWh).
 - PINN MAE is substantially lower than the analytical Physics Model (0.780 kWh).
+- PINN MAE (0.295 kWh) is lower than Ridge MAE (0.368 kWh).
+- PINN has the lowest point-estimate MAE in the four-method table. The PINN and Ridge trip-level MAE intervals overlap, so that full-data gap is not a sharp separation.
 - The physics-informed structure is useful for the neural estimator under weak SoC supervision.
 - The data-scarcity experiment is the evidence for behaviour when fewer training trips are available.
 
 What the results do not support:
 
-- A claim that PINN has lower error than every baseline on full-data LOTO.
 - Validation of instantaneous battery power; there are no direct power labels.
 - A new EV routing algorithm. The routing section is a battery-feasibility sensitivity.
 
 Data-scarcity detail (3 seeds, predefined repeats):
 
-- n=3: Regularized Regression 1.325 kWh; Data-Driven MLP 0.710 kWh; PINN 0.439 kWh.
-- n=5: Regularized Regression 1.712 kWh; Data-Driven MLP 0.697 kWh; PINN 0.344 kWh.
-- n=8: Regularized Regression 1.171 kWh; Data-Driven MLP 0.434 kWh; PINN 0.297 kWh.
-- n=12: Regularized Regression 0.221 kWh; Data-Driven MLP 0.459 kWh; PINN 0.305 kWh.
-- n=16: Regularized Regression 0.167 kWh; Data-Driven MLP 0.475 kWh; PINN 0.295 kWh.
+- n=3: Ridge Regression 2.247 kWh; Data-Driven MLP 0.710 kWh; PINN 0.439 kWh.
+- n=5: Ridge Regression 5.520 kWh; Data-Driven MLP 0.697 kWh; PINN 0.344 kWh.
+- n=8: Ridge Regression 2.031 kWh; Data-Driven MLP 0.434 kWh; PINN 0.297 kWh.
+- n=12: Ridge Regression 0.400 kWh; Data-Driven MLP 0.459 kWh; PINN 0.305 kWh.
+- n=16: Ridge Regression 0.368 kWh; Data-Driven MLP 0.475 kWh; PINN 0.295 kWh.
+- At 3, 5, and 8 training trips, Ridge MAE is higher and its replicate spread is larger than either neural method.
 - Compare PINN with Data-Driven MLP at each training size above; do not collapse the curve into a single ranking.
 - Main-table PINN MAE averages LOTO seeds 0/1/2 on all 16 remaining trips. Scarcity n=16 reuses those same predictions, so the scarcity n=16 PINN entry is the mean of the three seed-wise trip MAEs.
+
+Paired neural comparison:
+
+- One value per held-out trip: PINN absolute error minus Data-Driven MLP absolute error, after averaging neural seeds within the trip.
+- Mean difference -0.180 kWh (95% trip bootstrap [-0.316, -0.056]), n=17, Wilcoxon p=0.020.
+- A negative difference means lower PINN absolute error. Seeds are not treated as independent trips.
 
 Feasibility detail:
 

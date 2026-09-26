@@ -10,7 +10,8 @@ import pandas as pd
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 from data.preprocessing import ProcessedTrip, elapsed_seconds
-from evaluation.bootstrap import trip_absolute_errors
+from evaluation.bootstrap import bootstrap_mean_ci, trip_absolute_errors
+from evaluation.metrics import summarize_energy_table
 from evaluation.names import (
     FEASIBILITY_METHODS,
     METHOD_COLORS,
@@ -58,7 +59,7 @@ def fig01_method(path: Path) -> None:
     box(0.32, 0.62, 0.22, 0.14, "Neural correction\n$\\delta P=\\ell\\,\\tanh(\\mathrm{NN}(x_t))$", "#e8f0e8")
     box(0.61, 0.68, 0.35, 0.18, "$\\hat P(t)=P_\\mathrm{physics}(t)+\\delta P(t)$\nNo instantaneous battery-power labels", "#e8eef7")
     box(0.61, 0.40, 0.35, 0.18, "Trapezoidal energy integration\n$\\Delta E_i=0.5(\\hat P_i+\\hat P_{i+1})\\,\\Delta t_i/3600$", "#f4f4f4")
-    box(0.03, 0.08, 0.45, 0.22, "Multi-window SoC energy supervision\n$E_\\mathrm{obs}(a,b)=E_\\mathrm{batt}(\\mathrm{SOC}[a]-\\mathrm{SOC}[b])/100$\nvs $E_\\mathrm{pred}(a,b)=\\int_a^b \\hat P\\,dt$", "#f4f4f4")
+    box(0.03, 0.08, 0.45, 0.22, "Multi-window SoC energy supervision\nSoC used only as training/evaluation\nsupervision, not a power-branch input\nNo instantaneous battery-power labels", "#f4f4f4")
     box(0.52, 0.08, 0.44, 0.22, "Battery-energy conservation\n$r_i=\\hat D[i+1]-\\hat D[i]-100\\,\\Delta E_i/E_\\mathrm{batt}$\nDiscrete-time PINN (not a PDE PINN)", "#f8ecec")
 
     arrow(0.25, 0.88, 0.32, 0.88)
@@ -93,9 +94,17 @@ def fig02_observed_vs_predicted(pred: pd.DataFrame, path: Path) -> None:
             linewidths=0.4,
             zorder=2,
         )
-        err = trip_absolute_errors(pred, method)
-        mae = float(err.mean())
-        ax.text(0.04, 0.96, f"{label(method)}\nMAE {mae:.3f} kWh", transform=ax.transAxes, va="top", ha="left", fontsize=7.5)
+        mae = float(trip_absolute_errors(pred, method).mean())
+        r2 = float(summarize_energy_table(pred.loc[pred["method"] == method]).get(method, {}).get("r2", float("nan")))
+        ax.text(
+            0.04,
+            0.96,
+            f"{label(method)}\nMAE {mae:.3f} kWh\n$R^2$ {r2:.3f}",
+            transform=ax.transAxes,
+            va="top",
+            ha="left",
+            fontsize=7.5,
+        )
         ax.set_xlim(lim)
         ax.set_ylim(lim)
         ax.set_aspect("equal", adjustable="box")
@@ -137,7 +146,7 @@ def fig03_trip_errors(pred: pd.DataFrame, path: Path) -> None:
 
 
 def fig04_data_scarcity(raw: pd.DataFrame, path: Path) -> None:
-    from evaluation.final_tables import complete_scarcity_frame
+    from evaluation.final_tables import _replicate_means, complete_scarcity_frame
 
     raw = complete_scarcity_frame(raw)
     apply_style()
@@ -149,12 +158,19 @@ def fig04_data_scarcity(raw: pd.DataFrame, path: Path) -> None:
         g = raw.loc[raw["method"] == method]
         if g.empty:
             continue
-        run = g.groupby(["n_train", "seed", "repeat"], dropna=False)["absolute_error_kwh"].mean().reset_index()
-        stats = run.groupby("n_train")["absolute_error_kwh"].agg(["mean", "std"]).reset_index()
+        xs, means, stds = [], [], []
+        for n in (3, 5, 8, 12, 16):
+            sub = g.loc[g["n_train"] == n]
+            if sub.empty:
+                continue
+            run = _replicate_means(sub, method)
+            xs.append(n)
+            means.append(float(run.mean()))
+            stds.append(float(run.std(ddof=1)) if len(run) > 1 else 0.0)
         ax.errorbar(
-            stats["n_train"],
-            stats["mean"],
-            yerr=stats["std"].fillna(0.0),
+            xs,
+            means,
+            yerr=stds,
             color=_c(method),
             marker=METHOD_MARKERS.get(method, "o"),
             ls=METHOD_LINESTYLES.get(method, "-"),
@@ -239,5 +255,200 @@ def fig06_soc_reconstruction(trips: list[ProcessedTrip], rec_dir: Path, path: Pa
         if ax is axes[0]:
             ax.legend(loc="upper right")
         ax.set_xlabel("Time (min)")
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_mae_ci(pred: pd.DataFrame, path: Path) -> None:
+    apply_style()
+    methods = [m for m in PARITY_METHODS if m in set(pred["method"])]
+    means, lo, hi = [], [], []
+    for method in methods:
+        stats = bootstrap_mean_ci(trip_absolute_errors(pred, method).to_numpy(dtype=float))
+        means.append(stats["mean"])
+        lo.append(stats["ci_low"])
+        hi.append(stats["ci_high"])
+    y = np.arange(len(methods))
+    fig, ax = plt.subplots(figsize=(7.2, 3.6))
+    xerr = np.vstack([np.array(means) - np.array(lo), np.array(hi) - np.array(means)])
+    ax.errorbar(means, y, xerr=xerr, fmt="none", ecolor="#222222", capsize=3, zorder=2)
+    for i, method in enumerate(methods):
+        ax.plot(means[i], y[i], marker=METHOD_MARKERS.get(method, "o"), color=_c(method), ms=8)
+    ax.set_yticks(y)
+    ax.set_yticklabels([label(m) for m in methods])
+    ax.set_xlabel("Trip-energy MAE (kWh)")
+    ax.set_xlim(left=0)
+    ax.invert_yaxis()
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_residuals(pred: pd.DataFrame, path: Path) -> None:
+    apply_style()
+    trip = trip_level_predictions(pred)
+    methods = [m for m in PARITY_METHODS if m in set(trip["method"])]
+    fig, axes = plt.subplots(2, 2, figsize=(7.4, 6.6), sharex=True, sharey=True)
+    resid = trip["predicted_energy_kwh"] - trip["observed_energy_kwh"]
+    pad_y = 0.08 * (resid.max() - resid.min() + 1e-6)
+    ylim = (float(resid.min()) - pad_y, float(resid.max()) + pad_y)
+    xlim = (
+        float(trip["observed_energy_kwh"].min()) - 0.2,
+        float(trip["observed_energy_kwh"].max()) + 0.2,
+    )
+    for ax, method in zip(axes.ravel(), methods):
+        g = trip.loc[trip["method"] == method]
+        ax.axhline(0.0, color="0.55", lw=1.0)
+        ax.scatter(
+            g["observed_energy_kwh"],
+            g["predicted_energy_kwh"] - g["observed_energy_kwh"],
+            s=36,
+            c=_c(method),
+            marker=METHOD_MARKERS.get(method, "o"),
+            edgecolors="0.15",
+            linewidths=0.4,
+        )
+        ax.text(0.04, 0.96, label(method), transform=ax.transAxes, va="top", fontsize=8)
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+    axes[1, 0].set_xlabel("Observed trip energy (kWh)")
+    axes[1, 1].set_xlabel("Observed trip energy (kWh)")
+    axes[0, 0].set_ylabel("Residual (kWh)")
+    axes[1, 0].set_ylabel("Residual (kWh)")
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_error_ecdf(pred: pd.DataFrame, path: Path) -> None:
+    apply_style()
+    methods = [m for m in PARITY_METHODS if m in set(pred["method"])]
+    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    for method in methods:
+        err = np.sort(trip_absolute_errors(pred, method).to_numpy(dtype=float))
+        y = np.arange(1, len(err) + 1) / len(err)
+        ax.step(err, y, where="post", color=_c(method), ls=METHOD_LINESTYLES.get(method, "-"), label=label(method))
+    ax.set_xlabel("Absolute trip-energy error (kWh)")
+    ax.set_ylabel("Fraction of trips")
+    ax.set_ylim(0, 1.02)
+    ax.set_xlim(left=0)
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_trip_error_heatmap(pred: pd.DataFrame, path: Path) -> None:
+    apply_style()
+    methods = [m for m in PARITY_METHODS if m in set(pred["method"])]
+    err = pred.loc[pred["method"].isin(methods), ["trip_id", "trajectory", "method", "absolute_error_kwh"]]
+    trip_err = err.groupby(["trajectory", "trip_id", "method"], as_index=False)["absolute_error_kwh"].mean()
+    order = trip_err.sort_values(["trajectory", "trip_id"])["trip_id"].drop_duplicates().tolist()
+    mat = (
+        trip_err.pivot(index="trip_id", columns="method", values="absolute_error_kwh")
+        .reindex(index=order, columns=methods)
+    )
+    fig, ax = plt.subplots(figsize=(7.2, 6.4))
+    im = ax.imshow(mat.to_numpy(dtype=float), aspect="auto", cmap="Greys", vmin=0)
+    ax.set_xticks(range(len(methods)))
+    ax.set_xticklabels([label(m) for m in methods], rotation=20, ha="right")
+    ax.set_yticks(range(len(mat.index)))
+    ax.set_yticklabels(list(mat.index), fontsize=7)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Absolute error (kWh)")
+    traj = trip_err.drop_duplicates("trip_id").set_index("trip_id").loc[order, "trajectory"]
+    boundaries = [i for i in range(1, len(order)) if traj.iloc[i] != traj.iloc[i - 1]]
+    for b in boundaries:
+        ax.axhline(b - 0.5, color="white", lw=1.5)
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_pinn_vs_mlp(pred: pd.DataFrame, path: Path) -> None:
+    apply_style()
+    a = trip_absolute_errors(pred, "weak_mlp")
+    b = trip_absolute_errors(pred, "pinn")
+    aligned = pd.concat([a.rename("mlp"), b.rename("pinn")], axis=1, join="inner").dropna()
+    if aligned.empty:
+        return
+    fig, ax = plt.subplots(figsize=(5.4, 5.2))
+    hi = float(max(aligned["mlp"].max(), aligned["pinn"].max())) * 1.05
+    ax.plot([0, hi], [0, hi], color="0.55", lw=1.0)
+    ax.scatter(aligned["mlp"], aligned["pinn"], s=36, c=_c("pinn"), edgecolors="0.15", linewidths=0.4)
+    ax.set_xlabel("Data-Driven MLP absolute error (kWh)")
+    ax.set_ylabel("PINN absolute error (kWh)")
+    ax.set_xlim(0, hi)
+    ax.set_ylim(0, hi)
+    ax.set_aspect("equal", adjustable="box")
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_window_consistency(window_csv: Path, path: Path) -> None:
+    if not window_csv.exists():
+        return
+    frame = pd.read_csv(window_csv)
+    if "level" in frame.columns:
+        frame = frame.loc[frame["level"] == "scale"]
+    if frame.empty or "scale" not in frame.columns:
+        return
+    apply_style()
+    methods = [m for m in ("physics", "weak_mlp", "pinn") if m in set(frame["method"])]
+    preferred = ["time_60s", "time_120s", "time_300s", "time_600s", "full_trip"]
+    scales = [s for s in preferred if s in set(frame["scale"])]
+    labels = {"time_60s": "60 s", "time_120s": "120 s", "time_300s": "300 s", "time_600s": "600 s", "full_trip": "full trip"}
+    if not scales:
+        return
+    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    x = np.arange(len(scales))
+    for method in methods:
+        sub = frame.loc[frame["method"] == method]
+        if "seed" in sub.columns:
+            sub = sub.groupby(["trip_id", "scale"], as_index=False)["mae_kwh"].mean()
+        ys = []
+        for scale in scales:
+            g = sub.loc[sub["scale"] == scale, "mae_kwh"]
+            ys.append(float(g.mean()) if len(g) else np.nan)
+        ax.plot(
+            x,
+            ys,
+            marker=METHOD_MARKERS.get(method, "o"),
+            color=_c(method),
+            ls=METHOD_LINESTYLES.get(method, "-"),
+            label=label(method),
+        )
+    ax.set_xticks(x)
+    ax.set_xticklabels([labels.get(s, s) for s in scales])
+    ax.set_ylabel("Window-energy MAE (kWh)")
+    ax.set_xlabel("Evaluation window scale")
+    ax.set_ylim(bottom=0)
+    ax.legend(loc="best")
+    fig.tight_layout()
+    save_png(fig, path)
+
+
+def fig_training_loss(history_csv: Path, path: Path) -> None:
+    if history_csv is None or not Path(history_csv).exists():
+        return
+    hist = pd.read_csv(history_csv)
+    apply_style()
+    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+    series = [
+        ("train_loss", "training total"),
+        ("l_window", "window"),
+        ("l_dynamics", "dynamics"),
+        ("l_state", "state"),
+        ("l_prior", "prior"),
+    ]
+    colors = ["#222222", "#0072b2", "#d55e00", "#009e73", "#7a7a7a", "#000000"]
+    plotted = False
+    for (col, name), color in zip(series, colors):
+        if col in hist.columns and hist[col].notna().any():
+            ax.plot(hist["epoch"], hist[col], label=name, color=color, lw=1.1)
+            plotted = True
+    if not plotted:
+        plt.close(fig)
+        return
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.set_yscale("log")
+    ax.legend(loc="best", ncols=2)
     fig.tight_layout()
     save_png(fig, path)

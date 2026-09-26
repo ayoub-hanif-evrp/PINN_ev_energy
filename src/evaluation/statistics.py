@@ -12,7 +12,7 @@ from evaluation.bootstrap import bootstrap_mean_ci, paired_difference_ci, per_se
 
 PRIMARY_PAIRS = (
     ("pinn", "weak_mlp"),
-    ("pinn", "elasticnet"),
+    ("pinn", "ridge"),
     ("pinn", "physics"),
 )
 

@@ -18,6 +18,7 @@ from evaluation.final_tables import (  # noqa: E402
     table02_main,
     table03_scarcity,
     table04_feasibility,
+    table05_paired_neural,
 )
 from paths import project_root, resolve_under_root  # noqa: E402
 
@@ -30,7 +31,14 @@ def _fmt(x: float, nd: int = 3) -> str:
     return f"{float(x):.{nd}f}"
 
 
-def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, t3: pd.DataFrame, t4: pd.DataFrame) -> None:
+def write_experiment_summary(
+    out_dir: Path,
+    t1: pd.DataFrame,
+    t2: pd.DataFrame,
+    t3: pd.DataFrame,
+    t4: pd.DataFrame,
+    t5: pd.DataFrame | None = None,
+) -> None:
     lines = [
         "# Experiment summary (paper-writing reference)",
         "",
@@ -73,7 +81,8 @@ def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, 
         "Each complete (method, training size, seed) block is included.",
         "For n=3,5,8,12 there are three predefined subset repeats; n=16 uses the full outer-training set.",
         "MAE_kWh is the mean, across training replicates, of the mean absolute error over held-out trips.",
-        "uncertainty is the standard deviation of those replicate-level means (seed x subset repeat).",
+        "uncertainty is the standard deviation of those replicate-level means.",
+        "Neural replicates are seed by subset repeat. Ridge is deterministic, so identical training subsets that differ only by a nominal seed are counted once.",
         "Seeds are training replicates, not additional trips. The statistical unit remains the held-out trip.",
         "",
         "| n_train | method | MAE_kWh | uncertainty | number_of_runs |",
@@ -105,7 +114,7 @@ def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, 
 
     physics, enet, weak, pinn = (
         _mae("Physics Model"),
-        _mae("Regularized Regression"),
+        _mae("Ridge Regression"),
         _mae("Data-Driven MLP"),
         _mae("PINN"),
     )
@@ -115,15 +124,22 @@ def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, 
         "",
         "What the full-data LOTO results support:",
         "",
-        f"- Regularized Regression has the lowest full-data LOTO MAE ({_fmt(enet)} kWh).",
+        f"- Ridge Regression full-data LOTO MAE is {_fmt(enet)} kWh.",
         f"- PINN MAE ({_fmt(pinn)} kWh) is substantially lower than Data-Driven MLP ({_fmt(weak)} kWh).",
         f"- PINN MAE is substantially lower than the analytical Physics Model ({_fmt(physics)} kWh).",
+        f"- PINN MAE ({_fmt(pinn)} kWh) is lower than Ridge MAE ({_fmt(enet)} kWh)."
+        if pinn < enet
+        else (
+            f"- Ridge MAE ({_fmt(enet)} kWh) is lower than PINN MAE ({_fmt(pinn)} kWh)."
+            if enet < pinn
+            else f"- Ridge and PINN MAE both equal {_fmt(pinn)} kWh at this precision."
+        ),
+        "- PINN has the lowest point-estimate MAE in the four-method table. The PINN and Ridge trip-level MAE intervals overlap, so that full-data gap is not a sharp separation.",
         "- The physics-informed structure is useful for the neural estimator under weak SoC supervision.",
         "- The data-scarcity experiment is the evidence for behaviour when fewer training trips are available.",
         "",
         "What the results do not support:",
         "",
-        "- A claim that PINN has lower error than every baseline on full-data LOTO.",
         "- Validation of instantaneous battery power; there are no direct power labels.",
         "- A new EV routing algorithm. The routing section is a battery-feasibility sensitivity.",
         "",
@@ -139,13 +155,28 @@ def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, 
         ]
         for n in (3, 5, 8, 12, 16):
             lines.append(
-                f"- n={n}: Regularized Regression {_fmt(_n('Regularized Regression', n))} kWh; "
+                f"- n={n}: Ridge Regression {_fmt(_n('Ridge Regression', n))} kWh; "
                 f"Data-Driven MLP {_fmt(_n('Data-Driven MLP', n))} kWh; "
                 f"PINN {_fmt(_n('PINN', n))} kWh."
             )
         lines += [
+            "- At 3, 5, and 8 training trips, Ridge MAE is higher and its replicate spread is larger than either neural method.",
             "- Compare PINN with Data-Driven MLP at each training size above; do not collapse the curve into a single ranking.",
             "- Main-table PINN MAE averages LOTO seeds 0/1/2 on all 16 remaining trips. Scarcity n=16 reuses those same predictions, so the scarcity n=16 PINN entry is the mean of the three seed-wise trip MAEs.",
+            "",
+        ]
+    if t5 is not None and not t5.empty:
+        row = t5.iloc[0]
+        lines += [
+            "Paired neural comparison:",
+            "",
+            "- One value per held-out trip: PINN absolute error minus Data-Driven MLP absolute error, after averaging neural seeds within the trip.",
+            (
+                f"- Mean difference {_fmt(row['mean_absolute_error_difference_kwh'])} kWh "
+                f"(95% trip bootstrap [{_fmt(row['bootstrap_CI_low'])}, {_fmt(row['bootstrap_CI_high'])}]), "
+                f"n={int(row['n_trips'])}, Wilcoxon p={float(row['Wilcoxon_p']):.3f}."
+            ),
+            "- A negative difference means lower PINN absolute error. Seeds are not treated as independent trips.",
             "",
         ]
     if not t4.empty:
@@ -198,6 +229,9 @@ def main() -> int:
     t2 = table02_main(pred, boot if not boot.empty else None) if not pred.empty else pd.DataFrame()
     if not t2.empty:
         t2.to_csv(out / "table02_main_results.csv", index=False)
+    t5 = table05_paired_neural(pred) if not pred.empty else pd.DataFrame()
+    if not t5.empty:
+        t5.to_csv(out / "table05_paired_neural_comparison.csv", index=False)
 
     scarcity = _load(resolve_under_root("outputs/scarcity", root) / profile / "scarcity_per_trip.csv")
     t3 = table03_scarcity(scarcity) if not scarcity.empty else pd.DataFrame()
@@ -211,7 +245,7 @@ def main() -> int:
     if not t4.empty:
         t4.to_csv(out / "table04_feasibility.csv", index=False)
 
-    write_experiment_summary(resolve_under_root(args.out, root), t1, t2, t3, t4)
+    write_experiment_summary(resolve_under_root(args.out, root), t1, t2, t3, t4, t5)
     print(f"Wrote tables under {out}", flush=True)
     return 0
 

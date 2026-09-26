@@ -22,6 +22,19 @@ from plotting.final_figures import (  # noqa: E402
     fig04_data_scarcity,
     fig05_feasibility,
     fig06_soc_reconstruction,
+    fig_error_ecdf,
+    fig_mae_ci,
+    fig_pinn_vs_mlp,
+    fig_residuals,
+    fig_training_loss,
+    fig_trip_error_heatmap,
+    fig_window_consistency,
+)
+
+OLD_NAMES = (
+    "fig04_data_scarcity.png",
+    "fig05_feasibility.png",
+    "fig06_soc_reconstruction.png",
 )
 
 
@@ -46,21 +59,39 @@ def main() -> int:
     if not pred.empty:
         fig02_observed_vs_predicted(pred, fig_dir / "fig02_observed_vs_predicted.png")
         fig03_trip_errors(pred, fig_dir / "fig03_trip_errors.png")
+        fig_mae_ci(pred, fig_dir / "fig04_mae_ci.png")
+        fig_residuals(pred, fig_dir / "fig05_residuals.png")
+        fig_error_ecdf(pred, fig_dir / "fig06_error_ecdf.png")
+        fig_trip_error_heatmap(pred, fig_dir / "fig07_trip_error_heatmap.png")
+        fig_pinn_vs_mlp(pred, fig_dir / "fig09_pinn_vs_mlp.png")
 
     scarcity = _load(resolve_under_root("outputs/scarcity", root) / profile / "scarcity_per_trip.csv")
-    if not scarcity.empty:
-        fig04_data_scarcity(scarcity, fig_dir / "fig04_data_scarcity.png")
+    if not scarcity.empty and "ridge" in set(scarcity.get("method", [])):
+        fig04_data_scarcity(scarcity, fig_dir / "fig08_data_scarcity.png")
+
+    trips = load_processed(config)
+    rec_dir = loto / "soc_reconstruction"
+    if trips:
+        fig06_soc_reconstruction(trips, rec_dir, fig_dir / "fig10_soc_reconstruction.png")
+
+    fig_window_consistency(
+        loto / "window_eval" / "nonoverlapping_test_windows.csv",
+        fig_dir / "fig11_window_consistency.png",
+    )
 
     feas = _load(resolve_under_root("outputs/sensitivity", root) / profile / "feasibility.csv")
     if feas.empty:
         feas = _load(resolve_under_root("outputs/sensitivity", root) / profile / "feasibility_summary.csv")
     if not feas.empty:
-        fig05_feasibility(feas, fig_dir / "fig05_feasibility.png")
+        fig05_feasibility(feas, fig_dir / "fig12_feasibility.png")
 
-    trips = load_processed(config)
-    rec_dir = loto / "soc_reconstruction"
-    if trips:
-        fig06_soc_reconstruction(trips, rec_dir, fig_dir / "fig06_soc_reconstruction.png")
+    history = loto / "training_histories" / "T1_03_29_2021__pinn__seed0__select.csv"
+    fig_training_loss(history, fig_dir / "fig13_training_loss.png")
+
+    for name in OLD_NAMES:
+        stale = fig_dir / name
+        if stale.exists():
+            stale.unlink()
 
     print(f"Wrote figures under {fig_dir}", flush=True)
     return 0

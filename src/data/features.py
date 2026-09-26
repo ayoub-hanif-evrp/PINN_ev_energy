@@ -10,7 +10,7 @@ import pandas as pd
 from physics.vehicle_model import observed_energy_kwh
 from data.preprocessing import ProcessedTrip
 from data.schema import (
-    ELASTICNET_FEATURES,
+    RIDGE_FEATURES,
     EXCLUDED_MAIN_PREDICTORS,
     MAIN_MODEL_FEATURES,
     METADATA_COLUMNS,
@@ -49,7 +49,7 @@ def sample_feature_frame(trip: ProcessedTrip, feature_names: tuple[str, ...] | N
 
 
 def trip_level_features(trip: ProcessedTrip, battery_capacity_kwh: float = 6.0) -> dict[str, Any]:
-    """Trip summaries. SoC fields are labels only; they are not ElasticNet predictors."""
+    """Trip summaries. SoC fields are labels only; they are not Ridge predictors."""
     df = trip.frame
     speed = df["speed_mps"].to_numpy(dtype=float)
     acc = df["acc_mps2"].to_numpy(dtype=float)
@@ -123,28 +123,27 @@ def is_soc_derived_column(name: str) -> bool:
     return key.startswith("soc") or "dsoc" in key or key.endswith("_soc")
 
 
-def elasticnet_feature_matrix(table: pd.DataFrame) -> pd.DataFrame:
+def ridge_feature_matrix(table: pd.DataFrame) -> pd.DataFrame:
     """Whitelist-only design matrix. Raises if any SoC-derived column is requested."""
-    # Labels may sit in the same table; they must not enter X.
-    available = [c for c in ELASTICNET_FEATURES if c in table.columns]
+    available = [c for c in RIDGE_FEATURES if c in table.columns]
     forbidden = [c for c in available if is_soc_derived_column(c)]
     if forbidden:
-        raise ValueError(f"ElasticNet features must not include SoC-derived columns: {forbidden}")
-    missing = [c for c in ELASTICNET_FEATURES if c not in table.columns]
+        raise ValueError(f"Ridge features must not include SoC-derived columns: {forbidden}")
+    missing = [c for c in RIDGE_FEATURES if c not in table.columns]
     if missing:
-        raise KeyError(f"ElasticNet whitelist missing columns: {missing}")
-    x = table.loc[:, list(ELASTICNET_FEATURES)].copy()
+        raise KeyError(f"Ridge whitelist missing columns: {missing}")
+    x = table.loc[:, list(RIDGE_FEATURES)].copy()
     leaked_in_x = [c for c in x.columns if is_soc_derived_column(str(c))]
     if leaked_in_x:
-        raise ValueError(f"Leakage: SoC-derived columns in ElasticNet X: {leaked_in_x}")
+        raise ValueError(f"Leakage: SoC-derived columns in Ridge X: {leaked_in_x}")
     return x
 
 
-def elasticnet_target(table: pd.DataFrame, column: str = "e_obs_kwh") -> pd.Series:
+def ridge_target(table: pd.DataFrame, column: str = "e_obs_kwh") -> pd.Series:
     if column not in table.columns:
         raise KeyError(f"Target column {column} is not in the trip table.")
-    if column in ELASTICNET_FEATURES:
-        raise ValueError(f"Target {column} must not also be an ElasticNet predictor.")
+    if column in RIDGE_FEATURES:
+        raise ValueError(f"Target {column} must not also be a Ridge predictor.")
     return table[column]
 
 

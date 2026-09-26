@@ -29,7 +29,7 @@ from experiment.loto import _run_neural_fold, trip_obs  # noqa: E402
 from experiment.subsets import stratified_subset  # noqa: E402
 from manifest import git_commit, write_manifest  # noqa: E402
 from models.baselines import physics_only_predict  # noqa: E402
-from models.elasticnet import TripElasticNet  # noqa: E402
+from models.ridge import TripRidge  # noqa: E402
 from paths import project_root, resolve_under_root  # noqa: E402
 from physics.parameters import load_vehicle_parameters  # noqa: E402
 from training.cross_validation import select_validation_ids, trips_by_id  # noqa: E402
@@ -70,7 +70,7 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
     seeds = list(config.get("scarcity", {}).get("seeds") or [config.get("experiment", {}).get("seeds", [0])[0]])
     sizes = list(config.get("scarcity", {}).get("n_train_trips", [3, 5, 8, 12, 16]))
     n_rep = int(config.get("scarcity", {}).get("n_subset_repeats", 3))
-    methods = list(config.get("scarcity", {}).get("methods", ["elasticnet", "weak_mlp", "pinn"]))
+    methods = list(config.get("scarcity", {}).get("methods", ["ridge", "weak_mlp", "pinn"]))
     device = resolve_device(config)
     trips = load_processed(config)
     params = load_vehicle_parameters(config=config)
@@ -80,6 +80,7 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
     existing_path = out_dir / "scarcity_per_trip.csv"
     done = pd.read_csv(existing_path) if existing_path.exists() else pd.DataFrame()
     rows: list[dict[str, Any]] = [] if done.empty else done.to_dict("records")
+    rows = [row for row in rows if str(row.get("method")) != "elasticnet"]
     seen = _keys_from_rows(rows)
     if not done.empty:
         _print(f"Resuming scarcity from {existing_path} ({len(done)} existing rows)")
@@ -126,22 +127,28 @@ def run_scarcity(config: dict[str, Any]) -> pd.DataFrame:
                         "q_inner_train": q_inner,
                         "q_outer_train": q_outer,
                     }
-                    enet_key = _row_key("elasticnet", test.trip_id, int(n), int(rep), int(seed))
-                    if "elasticnet" in methods and enet_key not in seen:
+                    ridge_key = _row_key("ridge", test.trip_id, int(n), int(rep), int(seed))
+                    if "ridge" in methods and ridge_key not in seen:
                         table = trip_level_feature_table(subset, battery_capacity_kwh=params.battery_capacity_kwh)
                         test_table = trip_level_feature_table([test], battery_capacity_kwh=params.battery_capacity_kwh)
-                        model = TripElasticNet(random_state=int(seed)).fit(table)
+                        model = TripRidge().fit(table)
                         model.assert_not_fitted_on(test.trip_id)
                         pred = float(model.predict(test_table)[0])
                         row = trip_energy_row(
-                            test.trip_id, test.trajectory, "elasticnet", seed,
+                            test.trip_id, test.trajectory, "ridge", int(seed),
                             obs["distance_km"], obs["duration_s"], obs["e_obs_kwh"], pred,
                         )
-                        row.update({"n_train": int(n), "repeat": rep, "subset_ids": ",".join(subset_ids)})
+                        row.update({
+                            "n_train": int(n),
+                            "repeat": rep,
+                            "subset_ids": ",".join(subset_ids),
+                            "subset_seed": int(seed),
+                            "ridge_alpha": float(model.best_params_["alpha"]),
+                        })
                         rows.append(row)
-                        seen.add(enet_key)
+                        seen.add(ridge_key)
                     for method in methods:
-                        if method == "elasticnet":
+                        if method == "ridge":
                             continue
                         method_key = _row_key(method, test.trip_id, int(n), int(rep), int(seed))
                         if method_key in seen:

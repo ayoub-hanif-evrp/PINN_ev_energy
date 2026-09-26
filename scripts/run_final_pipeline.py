@@ -44,11 +44,13 @@ def main() -> int:
     if args.rerun_loto or not _present(loto_pred):
         _run([py, "scripts/run_loto.py", "--config", args.config])
     else:
-        print("Reusing existing paper LOTO outputs.", flush=True)
+        print("Reusing existing neural and physics LOTO outputs.", flush=True)
+        _run([py, "scripts/run_ridge_baseline.py"])
     if not _present(scarcity):
         _run([py, "scripts/run_data_scarcity.py", "--config", args.config])
     else:
-        print("Reusing existing paper data-scarcity outputs.", flush=True)
+        print("Filling any missing Ridge scarcity rows; neural rows are reused.", flush=True)
+        _run([py, "scripts/run_data_scarcity.py", "--config", args.config])
     if not _present(feas):
         _run([py, "scripts/run_feasibility_sensitivity.py", "--config", args.config])
     else:

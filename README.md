@@ -14,13 +14,13 @@ The practical task is trip energy: how much battery energy a Renault Twizy uses 
 
 **Secondary question.** Does the resulting energy estimation affect battery-feasibility decisions relevant to EV routing?
 
-The paper comparison contains four methods: Physics Model, Regularized Regression, Data-Driven MLP, and the proposed PINN. Evaluation is leave-one-trip-out on 17 analysed Moroccan HELECAR-D trips, plus a data-scarcity study and one small routing-oriented battery-feasibility assessment.
+The paper comparison contains four methods: Physics Model, Ridge Regression, Data-Driven MLP, and the proposed PINN. Evaluation is leave-one-trip-out on 17 analysed Moroccan HELECAR-D trips, plus a data-scarcity study and one small routing-oriented battery-feasibility assessment.
 
 ## 2. Scientific Motivation
 
 Sample-to-sample SoC differences are too quantized and noisy to treat as instantaneous power. Differentiating SoC at 1 Hz would treat a ~0.02 percentage-point step as an energy label of about 1.2 Wh and collapse supervision onto noise.
 
-There are **no direct instantaneous battery-power labels**. The model predicts latent battery power and is supervised indirectly through integrated energy. SoC is label information, not a neural-network input. The physics-informed structure is a candidate inductive bias for that weakly supervised neural estimator. Full-data leave-one-trip-out does not show lower PINN error than every baseline; Regularized Regression has the lowest full-data MAE.
+There are **no direct instantaneous battery-power labels**. The model predicts latent battery power and is supervised indirectly through integrated energy. SoC is label information, not a neural-network input. The physics-informed structure is a candidate inductive bias for that weakly supervised neural estimator. On the 17-trip leave-one-trip-out comparison, PINN has the lowest point-estimate MAE. Its trip-level MAE interval still overlaps the Ridge interval.
 
 ## 3. Dataset
 
@@ -107,21 +107,21 @@ Paper display names, in logical order:
 | Method | Role in the paper |
 |---|---|
 | Physics Model | Analytical non-learning longitudinal-vehicle reference. No fitting. |
-| Regularized Regression | Classical statistical reference. The implementation fits Ridge and ElasticNet candidates on a SoC-free feature whitelist and selects one by training-only inner validation. The held-out trip is never used for that choice. |
-| Data-Driven MLP | Nonlinear neural reference without physics. A multilayer perceptron predicts latent battery power from the same telemetry variables as the PINN and is trained with the same SoC-derived multi-window energy supervision, without the analytical physics branch, residual correction, or battery-dynamics loss. |
+| Ridge Regression | Regularized linear baseline required by the experimental design. It is trained only on SoC-free trip-level features. A predetermined alpha grid is selected by leave-one-trip-out on the outer-training trips only. |
+| Data-Driven MLP | A purely data-driven multilayer perceptron trained using the same SoC-derived multi-window energy supervision as the PINN, but without the analytical physics branch and physics-informed battery-dynamics constraint. |
 | PINN | Proposed discrete-time physics-informed model. |
 
-Internal cache identifiers remain `physics`, `elasticnet`, and `weak_mlp`. Those strings are not the paper names. A constant Wh/km predictor can still exist in older caches. It is not a paper method. Cached extra ablations are not paper methods and are not trained by `configs/paper.yaml`.
+Internal cache identifiers remain `physics`, `ridge`, and `weak_mlp`. Those strings are not the paper names. `weak_mlp` is the Data-Driven MLP. Cached extra ablations are not paper methods and are not trained by `configs/paper.yaml`.
 
 ## 10. Trip-Level Cross-Validation
 
 Primary evaluation is **leave-one-trip-out** (LOTO). No random row splitting.
 
-For every fold: test = one full trip; training = all remaining trips. All of the following are training-only: normalization, SoC quantization estimate \(q\), model fitting, validation, early stopping, and Regularized Regression fitting. Grouped inner validation prefers one trip from each of T1/T2/T3 when possible. The selected epoch is retrained on all outer-training trips. The statistical unit is the trip.
+For every fold: test = one full trip; training = all remaining trips. All of the following are training-only: normalization, SoC quantization estimate \(q\), model fitting, validation, early stopping, and Ridge scaling and alpha selection. Grouped inner validation prefers one trip from each of T1/T2/T3 when possible. The selected epoch is retrained on all outer-training trips. The statistical unit is the trip.
 
 ## 11. Data-Scarcity Experiment
 
-Required by the abstract. Training-set sizes: 3, 5, 8, 12, 16 trips. Compared methods: Regularized Regression, Data-Driven MLP, and PINN. The Physics Model is a fixed reference line because it does not depend on training size. Models are **not** retuned per training-set size. Subsets are deterministic. Neural seeds are 0, 1, and 2. For \(n=3,5,8,12\) each seed uses three predefined subset repeats (nine replicates). For \(n=16\) the outer-training set is the full leave-one-trip-out complement, so there is one subset per seed and the neural predictions are the existing LOTO predictions. MAE is the mean of replicate-level held-out-trip MAEs. The reported uncertainty is the standard deviation of those replicate means. Seeds are training replicates, not extra trips. This experiment answers only: how does each approach behave as fewer training trips are available?
+Required by the abstract. Training-set sizes: 3, 5, 8, 12, 16 trips. Compared methods: Ridge Regression, Data-Driven MLP, and PINN. The Physics Model is a fixed reference line because it does not depend on training size. Models are **not** retuned per training-set size. Subsets are the same predetermined trip subsets for every method. Neural seeds are 0, 1, and 2. For \(n=3,5,8,12\) each seed uses three predefined subset repeats. For \(n=16\) the outer-training set is the full leave-one-trip-out complement, and the neural predictions are the existing LOTO predictions. Ridge is deterministic, so identical full-set fits that differ only by a nominal seed are counted once. MAE is the mean of replicate-level held-out-trip MAEs. The reported uncertainty is the standard deviation of those replicate means. Seeds are training replicates, not extra trips. This experiment answers only: how does each approach behave as fewer training trips are available?
 
 ## 12. Routing-Oriented Battery-Feasibility Experiment
 
@@ -138,29 +138,29 @@ Numbers below match [`results/tables/`](results/tables/). Do not rank methods wi
 | Method | MAE (kWh) | 95% CI | RMSE | MAPE (%) | WAPE (%) | Bias | \(R^2\) |
 |---|---:|---|---:|---:|---:|---:|---:|
 | Physics Model | 0.780 | [0.614, 0.948] | 0.854 | 30.06 | 29.42 | −0.780 | 0.508 |
-| Regularized Regression | 0.167 | [0.113, 0.232] | 0.210 | 8.72 | 6.31 | −0.006 | 0.970 |
+| Ridge Regression | 0.368 | [0.229, 0.537] | 0.491 | 16.45 | 13.87 | −0.014 | 0.837 |
 | Data-Driven MLP | 0.475 | [0.312, 0.655] | 0.629 | 16.34 | 17.93 | +0.191 | 0.734 |
 | PINN | 0.295 | [0.209, 0.392] | 0.373 | 11.51 | 11.13 | −0.052 | 0.906 |
 
-Regularized Regression has the lowest full-data LOTO MAE. PINN MAE is substantially lower than Data-Driven MLP and substantially lower than the Physics Model.
+PINN has the lowest point-estimate MAE. That MAE is lower than Data-Driven MLP (paired mean difference −0.180 kWh, 95% trip bootstrap [−0.316, −0.056], Wilcoxon p = 0.020) and lower than the Physics Model. The PINN and Ridge MAE intervals overlap. Ridge is close to unbiased; the Physics Model under-predicts every trip in this split (bias equals −MAE).
 
-**Data scarcity** ([`table03_data_scarcity.csv`](results/tables/table03_data_scarcity.csv)), held-out MAE in kWh. Uncertainty in parentheses is the standard deviation across seed × subset-repeat replicates (9 replicates for \(n\le 12\); 3 seeds for \(n=16\)):
+**Data scarcity** ([`table03_data_scarcity.csv`](results/tables/table03_data_scarcity.csv)), held-out MAE in kWh. Uncertainty in parentheses is the standard deviation of replicate-level means. Neural replicates are seed × subset repeat. Ridge counts each distinct training subset once, so \(n=16\) has one Ridge run:
 
-| \(n_{\mathrm{train}}\) | Regularized Regression | Data-Driven MLP | PINN |
+| \(n_{\mathrm{train}}\) | Ridge Regression | Data-Driven MLP | PINN |
 |---:|---:|---:|---:|
-| 3 | 1.325 (1.439) | 0.710 (0.150) | 0.439 (0.115) |
-| 5 | 1.712 (2.837) | 0.697 (0.174) | 0.344 (0.048) |
-| 8 | 1.171 (1.932) | 0.434 (0.080) | 0.297 (0.065) |
-| 12 | 0.221 (0.032) | 0.459 (0.122) | 0.305 (0.055) |
-| 16 | 0.167 (0.000) | 0.475 (0.026) | 0.295 (0.048) |
+| 3 | 2.247 (1.986) | 0.710 (0.150) | 0.439 (0.115) |
+| 5 | 5.520 (3.031) | 0.697 (0.174) | 0.344 (0.048) |
+| 8 | 2.031 (2.521) | 0.434 (0.080) | 0.297 (0.065) |
+| 12 | 0.400 (0.061) | 0.459 (0.122) | 0.305 (0.055) |
+| 16 | 0.368 (0.000) | 0.475 (0.026) | 0.295 (0.048) |
 
-With three seeds, Regularized Regression has large replicate spread at 3, 5, and 8 training trips, and a lower MAE than PINN at 12 and 16 training trips. PINN MAE is lower than Data-Driven MLP at every reported training size. Scarcity \(n=16\) reuses the three-seed LOTO predictions, so those PINN and Data-Driven MLP entries match the main-table MAEs.
+At 3, 5, and 8 training trips, Ridge MAE is higher and much more variable than either neural method. PINN MAE is lower than Data-Driven MLP at every reported training size. Scarcity \(n=16\) reuses the three-seed LOTO predictions, so those PINN and Data-Driven MLP entries match the main-table MAEs. The Ridge \(n=16\) entry matches the Ridge main-table MAE.
 
 **Feasibility** ([`table04_feasibility.csv`](results/tables/table04_feasibility.csv)): at a 20% reserve, the Physics Model false-safe rate is 17.6% and the PINN false-safe rate is 5.9%. The Physics Model produces more false-safe decisions because it systematically under-predicts trip energy.
 
-What the results support: the physics-informed structure lowers neural trip-energy error relative to the comparable Data-Driven MLP under the same weak SoC supervision, including when few training trips are available. Regularized Regression remains lower-error on full-data LOTO.
+What the results support: the physics-informed structure lowers neural trip-energy error relative to the comparable Data-Driven MLP under the same weak SoC supervision, including when few training trips are available. PINN also has a lower full-data point-estimate MAE than Ridge Regression, without a sharp separation of their bootstrap intervals. Ridge is unstable when only a few training trips are available.
 
-What they do not support: a claim that PINN has lower error than every baseline; recovery of instantaneous battery power; a new EVRP algorithm.
+What they do not support: recovery of instantaneous battery power; a new EVRP algorithm; a claim that the PINN–Ridge full-data gap is sharply resolved by the trip-level intervals.
 
 ## 14. Figures
 
@@ -169,11 +169,20 @@ All final figures are PNG, 300 dpi, under [`results/figures/`](results/figures/)
 | File | Role |
 |---|---|
 | `fig01_method.png` | Discrete-time PINN: physics + neural correction + conservation + multi-window SoC energy supervision. No instantaneous power labels. |
-| `fig02_observed_vs_predicted.png` | Observed vs predicted trip energy for Physics Model, Regularized Regression, Data-Driven MLP, and PINN. |
+| `fig02_observed_vs_predicted.png` | Observed vs predicted trip energy for Physics Model, Ridge Regression, Data-Driven MLP, and PINN. |
 | `fig03_trip_errors.png` | Absolute held-out trip-energy errors (17 trips visible). |
-| `fig04_data_scarcity.png` | Held-out MAE vs number of training trips. |
-| `fig05_feasibility.png` | Routing-oriented false-safe and overly conservative rates. |
-| `fig06_soc_reconstruction.png` | Optional: observed quantized SoC vs SoC reconstructed by integrating PINN power on three predetermined trips (one per trajectory). |
+| `fig04_mae_ci.png` | Trip-energy MAE with 95% trip-level bootstrap intervals. |
+| `fig05_residuals.png` | Trip-energy residual versus observed energy. |
+| `fig06_error_ecdf.png` | Empirical distribution of absolute trip-energy error. |
+| `fig07_trip_error_heatmap.png` | Per-trip absolute error, ordered by trajectory. |
+| `fig08_data_scarcity.png` | Held-out MAE vs number of training trips. |
+| `fig09_pinn_vs_mlp.png` | Paired absolute error, PINN versus Data-Driven MLP. |
+| `fig10_soc_reconstruction.png` | Observed quantized SoC vs SoC reconstructed by integrating predicted power on three predetermined trips. |
+| `fig11_window_consistency.png` | Held-out window-energy MAE by time scale for Data-Driven MLP and PINN. |
+| `fig12_feasibility.png` | Routing-oriented false-safe and overly conservative rates. |
+| `fig13_training_loss.png` | Supplementary training-loss curves for one predetermined PINN fold and seed. |
+
+Recommended main-paper figures are listed in [`results/README.md`](results/README.md).
 
 ## 15. Repository Structure
 
@@ -189,6 +198,9 @@ PINN_ev_energy/
 │   └── vehicle_twizy.yaml
 ├── data/
 │   └── README.md
+├── docs/
+│   ├── dataset_analysis.md
+│   └── dataset_figures/
 ├── src/
 │   ├── data/
 │   ├── physics/
@@ -201,6 +213,7 @@ PINN_ev_energy/
 │   ├── run_loto.py
 │   ├── run_data_scarcity.py
 │   ├── run_feasibility_sensitivity.py
+│   ├── run_ridge_baseline.py
 │   ├── make_final_figures.py
 │   ├── make_final_tables.py
 │   └── run_final_pipeline.py
@@ -223,17 +236,17 @@ python scripts/run_final_pipeline.py --config configs/paper.yaml
 The wrapper performs only the conference-paper pipeline:
 
 1. data audit
-2. main LOTO if results are missing
-3. data-scarcity experiment if results are missing
+2. main LOTO if neural and physics results are missing; otherwise it refits only Ridge Regression on the existing folds
+3. data-scarcity experiment, reusing stored neural rows and fitting any missing Ridge rows
 4. feasibility experiment if results are missing
 5. final tables
 6. final PNG figures
 
-Existing paper LOTO, scarcity, and feasibility caches are reused. The wrapper does **not** run cross-trajectory studies, ablation suites, or parameter-sensitivity sweeps, and it does not retrain merely to change PINN’s rank.
+Existing neural LOTO, neural scarcity, and feasibility caches are reused. The wrapper does **not** retrain the PINN or the Data-Driven MLP merely because the regression baseline changed, and it does not run ablation suites or parameter-sensitivity sweeps.
 
 ## 17. Limitations
 
-Seventeen trips, one Renault Twizy, three Moroccan trajectories. No instantaneous battery-power ground truth, so latent \(\hat P(t)\) cannot be validated directly. Usable capacity and vehicle parameters are modelling assumptions. SoC is quantized/noisy; one analysed trip (`T3_05_25_2021_04`) contains a large SoC jump. Regularized Regression shows large replicate-to-replicate spread at the smallest training sizes. The routing section is only a battery-feasibility sensitivity. Multi-window supervision was not retuned from any internal full-trip-only comparison.
+Seventeen trips, one Renault Twizy, three Moroccan trajectories. No instantaneous battery-power ground truth, so latent \(\hat P(t)\) cannot be validated directly. Usable capacity and vehicle parameters are modelling assumptions. SoC is quantized/noisy; one analysed trip (`T3_05_25_2021_04`) contains a large SoC jump. Ridge Regression is unstable at the smallest training sizes because the trip-level feature set is wide relative to three to eight trips. The routing section is only a battery-feasibility sensitivity. Multi-window supervision was not retuned from any internal full-trip-only comparison.
 
 ## 18. Dataset Citation
 

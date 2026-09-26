@@ -87,9 +87,9 @@ FEATURE_UNITS = {
 
 EXCLUDED_MAIN_PREDICTORS = ("date", "time", "lat", "lon", "soc")
 
-# Trip-level ElasticNet predictors. Explicit whitelist: never include SoC-derived
+# Trip-level Ridge predictors. Explicit whitelist: never include SoC-derived
 # quantities (soc_start/soc_end reveal ΔSOC = start - end).
-ELASTICNET_FEATURES = (
+RIDGE_FEATURES = (
     "distance_km",
     "duration_s",
     "mean_speed_mps",
