@@ -95,7 +95,7 @@ def fig02_observed_vs_predicted(pred: pd.DataFrame, path: Path) -> None:
         )
         err = trip_absolute_errors(pred, method)
         mae = float(err.mean())
-        ax.text(0.04, 0.96, f"{label(method)}\nMAE {mae:.3f} kWh", transform=ax.transAxes, va="top", ha="left", fontsize=8)
+        ax.text(0.04, 0.96, f"{label(method)}\nMAE {mae:.3f} kWh", transform=ax.transAxes, va="top", ha="left", fontsize=7.5)
         ax.set_xlim(lim)
         ax.set_ylim(lim)
         ax.set_aspect("equal", adjustable="box")
@@ -129,7 +129,7 @@ def fig03_trip_errors(pred: pd.DataFrame, path: Path) -> None:
         ax.hlines(q[0.5], i - 0.18, i + 0.18, color="0.1", lw=1.4, zorder=4)
         ax.vlines(i, q[0.25], q[0.75], color="0.1", lw=1.1, zorder=4)
     ax.set_xticks(range(len(methods)))
-    ax.set_xticklabels([label(m) for m in methods])
+    ax.set_xticklabels([label(m) for m in methods], rotation=12, ha="right")
     ax.set_ylabel("Absolute held-out trip-energy error (kWh)")
     ax.set_ylim(bottom=0)
     fig.tight_layout()
@@ -144,7 +144,7 @@ def fig04_data_scarcity(raw: pd.DataFrame, path: Path) -> None:
     fig, ax = plt.subplots(figsize=(7.2, 4.3))
     if "physics" in set(raw["method"]):
         phys = float(raw.loc[raw["method"] == "physics", "absolute_error_kwh"].mean())
-        ax.axhline(phys, color=_c("physics"), ls="--", lw=1.1, label="Physics (fixed)")
+        ax.axhline(phys, color=_c("physics"), ls="--", lw=1.1, label="Physics Model (fixed)")
     for method in SCARCITY_METHODS:
         g = raw.loc[raw["method"] == method]
         if g.empty:

@@ -1,6 +1,6 @@
 # Physics-Informed Neural Network for Electric Vehicle Energy Estimation under Data Scarcity
 
-Research code for a **normal conference paper**. The scientific scope is locked to the abstract below. This repository does not add extra research questions, architectures, or journal-scale experiments.
+Research code accompanying a study of physics-informed electric-vehicle energy estimation under data scarcity. The scientific scope is locked to the paper abstract. This repository does not add extra research questions, architectures, or a machine-learning benchmark.
 
 A discrete-time physics-informed neural network (PINN) estimates EV energy when only limited real-world driving data are available, instantaneous battery-power measurements are unavailable, and battery information arrives through quantized/noisy State-of-Charge (SoC) observations. The model combines longitudinal vehicle dynamics with neural learning, estimates latent battery power from driving and environmental variables, enforces battery-energy conservation, and uses multi-window energy constraints derived from SoC depletion instead of noisy instantaneous SoC differences.
 
@@ -14,13 +14,13 @@ The practical task is trip energy: how much battery energy a Renault Twizy uses 
 
 **Secondary question.** Does the resulting energy estimation affect battery-feasibility decisions relevant to EV routing?
 
-The paper comparison contains four methods: Physics, ElasticNet, WeakMLP, and the proposed PINN. Evaluation is leave-one-trip-out on Moroccan HELECAR-D trips, plus a data-scarcity study and one small routing-oriented battery-feasibility assessment.
+The paper comparison contains four methods: Physics Model, Regularized Regression, Data-Driven MLP, and the proposed PINN. Evaluation is leave-one-trip-out on 17 analysed Moroccan HELECAR-D trips, plus a data-scarcity study and one small routing-oriented battery-feasibility assessment.
 
 ## 2. Scientific Motivation
 
 Sample-to-sample SoC differences are too quantized and noisy to treat as instantaneous power. Differentiating SoC at 1 Hz would treat a ~0.02 percentage-point step as an energy label of about 1.2 Wh and collapse supervision onto noise.
 
-There are **no direct instantaneous battery-power labels**. The model predicts latent battery power and is supervised indirectly through integrated energy. Physics supplies an inductive bias when few trips are available. The claim is not that PINN beats every baseline; the claim is that physics-informed learning is useful for weakly supervised neural EV energy estimation, particularly when training data are limited.
+There are **no direct instantaneous battery-power labels**. The model predicts latent battery power and is supervised indirectly through integrated energy. SoC is label information, not a neural-network input. The physics-informed structure is a candidate inductive bias for that weakly supervised neural estimator. Full-data leave-one-trip-out does not show lower PINN error than every baseline; Regularized Regression has the lowest full-data MAE.
 
 ## 3. Dataset
 
@@ -102,28 +102,30 @@ with a discrete SoC/depletion conservation residual tying \(\hat D\) to those en
 
 ## 9. Baselines
 
+Paper display names, in logical order:
+
 | Method | Role in the paper |
 |---|---|
-| Physics | Conventional analytical longitudinal-vehicle model. No fitting. |
-| ElasticNet | Regularized regression on a SoC-free feature whitelist. |
-| WeakMLP | Purely data-driven neural network with the same weak window supervision and no physics. |
+| Physics Model | Analytical non-learning longitudinal-vehicle reference. No fitting. |
+| Regularized Regression | Classical statistical reference. The implementation fits Ridge and ElasticNet candidates on a SoC-free feature whitelist and selects one by training-only inner validation. The held-out trip is never used for that choice. |
+| Data-Driven MLP | Nonlinear neural reference without physics. A multilayer perceptron predicts latent battery power from the same telemetry variables as the PINN and is trained with the same SoC-derived multi-window energy supervision, without the analytical physics branch, residual correction, or battery-dynamics loss. |
 | PINN | Proposed discrete-time physics-informed model. |
 
-A constant Wh/km baseline exists internally as a simple reference. It is **not** a major paper method. Extra ablations that may exist in cached LOTO files (MLP_STATE, PINN_NO_DYNAMICS, PINN_FULLTRIP) are **not** paper methods.
+Internal cache identifiers remain `physics`, `elasticnet`, and `weak_mlp`. Those strings are not the paper names. A constant Wh/km predictor can still exist in older caches. It is not a paper method. Cached extra ablations are not paper methods and are not trained by `configs/paper.yaml`.
 
 ## 10. Trip-Level Cross-Validation
 
 Primary evaluation is **leave-one-trip-out** (LOTO). No random row splitting.
 
-For every fold: test = one full trip; training = all remaining trips. All of the following are training-only: normalization, SoC quantization estimate \(q\), model fitting, validation, early stopping, and ElasticNet fitting. Grouped inner validation prefers one trip from each of T1/T2/T3 when possible. The selected epoch is retrained on all outer-training trips. The statistical unit is the trip.
+For every fold: test = one full trip; training = all remaining trips. All of the following are training-only: normalization, SoC quantization estimate \(q\), model fitting, validation, early stopping, and Regularized Regression fitting. Grouped inner validation prefers one trip from each of T1/T2/T3 when possible. The selected epoch is retrained on all outer-training trips. The statistical unit is the trip.
 
 ## 11. Data-Scarcity Experiment
 
-Required by the abstract. Training-set sizes: 3, 5, 8, 12, 16 trips. Compared methods: ElasticNet, WeakMLP, PINN. Physics is a fixed reference line because it does not depend on training size. Models are **not** retuned per training-set size. Subsets are deterministic. The reported table uses seed 0 (three subset repeats for \(n=3,5,8,12\); \(n=16\) is LOTO with 16 training trips). This experiment answers only: how does each approach behave as fewer training trips are available?
+Required by the abstract. Training-set sizes: 3, 5, 8, 12, 16 trips. Compared methods: Regularized Regression, Data-Driven MLP, and PINN. The Physics Model is a fixed reference line because it does not depend on training size. Models are **not** retuned per training-set size. Subsets are deterministic. Neural seeds are 0, 1, and 2. For \(n=3,5,8,12\) each seed uses three predefined subset repeats (nine replicates). For \(n=16\) the outer-training set is the full leave-one-trip-out complement, so there is one subset per seed and the neural predictions are the existing LOTO predictions. MAE is the mean of replicate-level held-out-trip MAEs. The reported uncertainty is the standard deviation of those replicate means. Seeds are training replicates, not extra trips. This experiment answers only: how does each approach behave as fewer training trips are available?
 
 ## 12. Routing-Oriented Battery-Feasibility Experiment
 
-This is a **small additional experiment**, not a new EVRP solver and not a routing optimization algorithm. Energy predictions are used only to evaluate battery-feasibility decisions at reserve levels 5%, 10%, 15%, and 20% SoC. Compared methods: Physics and PINN. Reported quantities: false-safe rate and overly conservative rate.
+This is a **small additional experiment**, not a new EVRP solver and not a routing optimization algorithm. Energy predictions are used only to evaluate battery-feasibility decisions at reserve levels 5%, 10%, 15%, and 20% SoC. Compared methods: Physics Model and PINN. Reported quantities: false-safe rate and overly conservative rate.
 
 Call it a routing-oriented battery-feasibility assessment / sensitivity.
 
@@ -135,30 +137,30 @@ Numbers below match [`results/tables/`](results/tables/). Do not rank methods wi
 
 | Method | MAE (kWh) | 95% CI | RMSE | MAPE (%) | WAPE (%) | Bias | \(R^2\) |
 |---|---:|---|---:|---:|---:|---:|---:|
-| Physics | 0.780 | [0.614, 0.948] | 0.854 | 30.06 | 29.42 | −0.780 | 0.508 |
-| ElasticNet | 0.167 | [0.113, 0.232] | 0.210 | 8.72 | 6.31 | −0.006 | 0.970 |
-| WeakMLP | 0.475 | [0.312, 0.655] | 0.629 | 16.34 | 17.93 | +0.191 | 0.734 |
+| Physics Model | 0.780 | [0.614, 0.948] | 0.854 | 30.06 | 29.42 | −0.780 | 0.508 |
+| Regularized Regression | 0.167 | [0.113, 0.232] | 0.210 | 8.72 | 6.31 | −0.006 | 0.970 |
+| Data-Driven MLP | 0.475 | [0.312, 0.655] | 0.629 | 16.34 | 17.93 | +0.191 | 0.734 |
 | PINN | 0.295 | [0.209, 0.392] | 0.373 | 11.51 | 11.13 | −0.052 | 0.906 |
 
-ElasticNet is strongest on ordinary full-data LOTO. PINN improves substantially over WeakMLP and over analytical Physics. PINN is **not** globally best.
+Regularized Regression has the lowest full-data LOTO MAE. PINN MAE is substantially lower than Data-Driven MLP and substantially lower than the Physics Model.
 
-**Data scarcity** ([`table03_data_scarcity.csv`](results/tables/table03_data_scarcity.csv)), held-out MAE (kWh):
+**Data scarcity** ([`table03_data_scarcity.csv`](results/tables/table03_data_scarcity.csv)), held-out MAE in kWh. Uncertainty in parentheses is the standard deviation across seed × subset-repeat replicates (9 replicates for \(n\le 12\); 3 seeds for \(n=16\)):
 
-| \(n_{\mathrm{train}}\) | ElasticNet | WeakMLP | PINN |
+| \(n_{\mathrm{train}}\) | Regularized Regression | Data-Driven MLP | PINN |
 |---:|---:|---:|---:|
-| 3 | 0.374 | 0.575 | 0.317 |
-| 5 | 0.314 | 0.756 | 0.340 |
-| 8 | 1.006 | 0.431 | 0.333 |
-| 12 | 0.225 | 0.348 | 0.266 |
-| 16 | 0.167 | 0.445 | 0.350 |
+| 3 | 1.325 (1.439) | 0.710 (0.150) | 0.439 (0.115) |
+| 5 | 1.712 (2.837) | 0.697 (0.174) | 0.344 (0.048) |
+| 8 | 1.171 (1.932) | 0.434 (0.080) | 0.297 (0.065) |
+| 12 | 0.221 (0.032) | 0.459 (0.122) | 0.305 (0.055) |
+| 16 | 0.167 (0.000) | 0.475 (0.026) | 0.295 (0.048) |
 
-PINN is strongest at \(n=3\). ElasticNet is unstable at \(n=8\) and strongest at \(n=12\) and \(n=16\). PINN remains better than WeakMLP at every reported training size. Scarcity \(n=16\) PINN (0.350 kWh, seed 0) need not match the main-table PINN MAE (0.295 kWh, seeds 0/1/2).
+With three seeds, Regularized Regression has large replicate spread at 3, 5, and 8 training trips, and a lower MAE than PINN at 12 and 16 training trips. PINN MAE is lower than Data-Driven MLP at every reported training size. Scarcity \(n=16\) reuses the three-seed LOTO predictions, so those PINN and Data-Driven MLP entries match the main-table MAEs.
 
-**Feasibility** ([`table04_feasibility.csv`](results/tables/table04_feasibility.csv)): at a 20% reserve, Physics false-safe rate is 17.6% vs PINN 5.9%. Physics is more false-safe because it systematically under-predicts trip energy.
+**Feasibility** ([`table04_feasibility.csv`](results/tables/table04_feasibility.csv)): at a 20% reserve, the Physics Model false-safe rate is 17.6% and the PINN false-safe rate is 5.9%. The Physics Model produces more false-safe decisions because it systematically under-predicts trip energy.
 
-What the results support: physics-informed learning provides a useful inductive bias for weakly supervised neural EV energy estimation when direct power labels are unavailable, particularly when training data are limited.
+What the results support: the physics-informed structure lowers neural trip-energy error relative to the comparable Data-Driven MLP under the same weak SoC supervision, including when few training trips are available. Regularized Regression remains lower-error on full-data LOTO.
 
-What they do **not** support: PINN beats every model; instantaneous battery power is recovered; the method is a new EVRP algorithm.
+What they do not support: a claim that PINN has lower error than every baseline; recovery of instantaneous battery power; a new EVRP algorithm.
 
 ## 14. Figures
 
@@ -167,7 +169,7 @@ All final figures are PNG, 300 dpi, under [`results/figures/`](results/figures/)
 | File | Role |
 |---|---|
 | `fig01_method.png` | Discrete-time PINN: physics + neural correction + conservation + multi-window SoC energy supervision. No instantaneous power labels. |
-| `fig02_observed_vs_predicted.png` | Observed vs predicted trip energy for Physics, ElasticNet, WeakMLP, PINN. |
+| `fig02_observed_vs_predicted.png` | Observed vs predicted trip energy for Physics Model, Regularized Regression, Data-Driven MLP, and PINN. |
 | `fig03_trip_errors.png` | Absolute held-out trip-energy errors (17 trips visible). |
 | `fig04_data_scarcity.png` | Held-out MAE vs number of training trips. |
 | `fig05_feasibility.png` | Routing-oriented false-safe and overly conservative rates. |
@@ -231,7 +233,7 @@ Existing paper LOTO, scarcity, and feasibility caches are reused. The wrapper do
 
 ## 17. Limitations
 
-Seventeen trips, one Renault Twizy, three Moroccan trajectories. No instantaneous battery-power ground truth, so latent \(\hat P(t)\) cannot be validated directly. Usable capacity and vehicle parameters are modelling assumptions. SoC is quantized/noisy; one analysed trip (`T3_05_25_2021_04`) contains a large SoC jump. The data-scarcity table uses seed 0; a three-seed neural scarcity study was not completed. ElasticNet can be unstable with very few trips. The routing section is only a battery-feasibility sensitivity. An internal full-trip-only ablation had a lower LOTO trip MAE than the multi-window PINN; windows were not retuned from that result.
+Seventeen trips, one Renault Twizy, three Moroccan trajectories. No instantaneous battery-power ground truth, so latent \(\hat P(t)\) cannot be validated directly. Usable capacity and vehicle parameters are modelling assumptions. SoC is quantized/noisy; one analysed trip (`T3_05_25_2021_04`) contains a large SoC jump. Regularized Regression shows large replicate-to-replicate spread at the smallest training sizes. The routing section is only a battery-feasibility sensitivity. Multi-window supervision was not retuned from any internal full-trip-only comparison.
 
 ## 18. Dataset Citation
 

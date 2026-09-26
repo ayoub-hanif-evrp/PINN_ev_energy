@@ -121,13 +121,9 @@ experiment:
   retrain_outer: true
   cache: true
   methods:
-    - constant
     - physics
     - elasticnet
     - weak_mlp
-    - mlp_state
-    - pinn_no_dynamics
-    - pinn_fulltrip
     - pinn
 
 training:

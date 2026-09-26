@@ -140,7 +140,7 @@ def table04_feasibility(raw: pd.DataFrame) -> pd.DataFrame:
         )
     out = pd.DataFrame(rows)
     if not out.empty:
-        order = {"Physics": 0, "PINN": 1}
+        order = {"Physics Model": 0, "PINN": 1}
         out["_o"] = out["method"].map(lambda m: order.get(m, 9))
         out = out.sort_values(["reserve_soc_pct", "_o"]).drop(columns="_o")
     return out

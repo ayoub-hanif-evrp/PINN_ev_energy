@@ -70,8 +70,11 @@ def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, 
         "## Data scarcity",
         "",
         "Held-out energy MAE as a function of the number of training trips.",
-        "Complete aggregation currently uses seed 0 and three subset repeats for n=3,5,8,12;",
-        "n=16 is leave-one-trip-out with 16 training trips (one seed).",
+        "Each complete (method, training size, seed) block is included.",
+        "For n=3,5,8,12 there are three predefined subset repeats; n=16 uses the full outer-training set.",
+        "MAE_kWh is the mean, across training replicates, of the mean absolute error over held-out trips.",
+        "uncertainty is the standard deviation of those replicate-level means (seed x subset repeat).",
+        "Seeds are training replicates, not additional trips. The statistical unit remains the held-out trip.",
         "",
         "| n_train | method | MAE_kWh | uncertainty | number_of_runs |",
         "|---:|---|---:|---:|---:|",
@@ -100,50 +103,60 @@ def write_experiment_summary(out_dir: Path, t1: pd.DataFrame, t2: pd.DataFrame, 
         hit = t2.loc[t2["Method"] == name]
         return float(hit["MAE_kWh"].iloc[0]) if not hit.empty else float("nan")
 
-    physics, enet, weak, pinn = _mae("Physics"), _mae("ElasticNet"), _mae("WeakMLP"), _mae("PINN")
+    physics, enet, weak, pinn = (
+        _mae("Physics Model"),
+        _mae("Regularized Regression"),
+        _mae("Data-Driven MLP"),
+        _mae("PINN"),
+    )
     lines += [
         "",
         "## Scientific interpretation",
         "",
-        "What the results support:",
+        "What the full-data LOTO results support:",
         "",
-        f"- ElasticNet is strongest on ordinary full-data LOTO (MAE {_fmt(enet)} kWh).",
-        f"- PINN improves substantially over the purely data-driven WeakMLP ({_fmt(pinn)} vs {_fmt(weak)} kWh).",
-        f"- PINN improves substantially over the analytical physics model ({_fmt(pinn)} vs {_fmt(physics)} kWh).",
-        "- Physics-informed learning is a useful inductive bias when instantaneous battery-power labels are unavailable, particularly when training trips are scarce.",
+        f"- Regularized Regression has the lowest full-data LOTO MAE ({_fmt(enet)} kWh).",
+        f"- PINN MAE ({_fmt(pinn)} kWh) is substantially lower than Data-Driven MLP ({_fmt(weak)} kWh).",
+        f"- PINN MAE is substantially lower than the analytical Physics Model ({_fmt(physics)} kWh).",
+        "- The physics-informed structure is useful for the neural estimator under weak SoC supervision.",
+        "- The data-scarcity experiment is the evidence for behaviour when fewer training trips are available.",
         "",
-        "What the results do **not** support:",
+        "What the results do not support:",
         "",
-        "- PINN is not globally best. ElasticNet remains better overall on full-data LOTO.",
-        "- Instantaneous battery power has not been validated against ground truth; there are no direct power labels.",
-        "- The routing section is only a battery-feasibility sensitivity, not a new routing algorithm.",
+        "- A claim that PINN has lower error than every baseline on full-data LOTO.",
+        "- Validation of instantaneous battery power; there are no direct power labels.",
+        "- A new EV routing algorithm. The routing section is a battery-feasibility sensitivity.",
         "",
     ]
     if not t3.empty:
-        n3 = t3.loc[t3["n_train"] == 3]
         def _n(method: str, n: int) -> float:
             hit = t3.loc[(t3["n_train"] == n) & (t3["method"] == method)]
             return float(hit["MAE_kWh"].iloc[0]) if not hit.empty else float("nan")
 
         lines += [
-            "Data-scarcity detail:",
+            "Data-scarcity detail (3 seeds, predefined repeats):",
             "",
-            f"- At 3 training trips, PINN MAE {_fmt(_n('PINN', 3))} kWh is lower than ElasticNet {_fmt(_n('ElasticNet', 3))} and WeakMLP {_fmt(_n('WeakMLP', 3))}.",
-            f"- At 8 training trips, ElasticNet is unstable (MAE {_fmt(_n('ElasticNet', 8))} kWh).",
-            f"- At 12 and 16 training trips, ElasticNet is again strongest ({_fmt(_n('ElasticNet', 12))} and {_fmt(_n('ElasticNet', 16))} kWh).",
-            f"- PINN remains better than WeakMLP at every reported training size.",
-            "- The main-table PINN MAE uses LOTO seeds 0/1/2. Scarcity n=16 uses seed 0 only, so those two PINN numbers need not match.",
+        ]
+        for n in (3, 5, 8, 12, 16):
+            lines.append(
+                f"- n={n}: Regularized Regression {_fmt(_n('Regularized Regression', n))} kWh; "
+                f"Data-Driven MLP {_fmt(_n('Data-Driven MLP', n))} kWh; "
+                f"PINN {_fmt(_n('PINN', n))} kWh."
+            )
+        lines += [
+            "- Compare PINN with Data-Driven MLP at each training size above; do not collapse the curve into a single ranking.",
+            "- Main-table PINN MAE averages LOTO seeds 0/1/2 on all 16 remaining trips. Scarcity n=16 reuses those same predictions, so the scarcity n=16 PINN entry is the mean of the three seed-wise trip MAEs.",
             "",
         ]
     if not t4.empty:
-        p20 = t4.loc[(t4["reserve_soc_pct"] == 20) & (t4["method"] == "Physics")]
+        p20 = t4.loc[(t4["reserve_soc_pct"] == 20) & (t4["method"] == "Physics Model")]
         n20 = t4.loc[(t4["reserve_soc_pct"] == 20) & (t4["method"] == "PINN")]
         if not p20.empty and not n20.empty:
             lines += [
                 "Feasibility detail:",
                 "",
-                f"- At a 20% reserve, Physics false-safe rate is {_fmt(p20['false_safe_pct'].iloc[0], 1)}% vs PINN {_fmt(n20['false_safe_pct'].iloc[0], 1)}%.",
-                "- Physics is more false-safe because it systematically under-predicts trip energy.",
+                f"- At a 20% reserve, Physics Model false-safe rate is {_fmt(p20['false_safe_pct'].iloc[0], 1)}% vs PINN {_fmt(n20['false_safe_pct'].iloc[0], 1)}%.",
+                "- The Physics Model produces more false-safe decisions because it systematically under-predicts trip energy.",
                 "",
             ]
     lines += [

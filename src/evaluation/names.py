@@ -15,9 +15,9 @@ METHOD_ORDER = [
 
 METHOD_LABELS = {
     "constant": "Constant",
-    "physics": "Physics",
-    "elasticnet": "ElasticNet",
-    "weak_mlp": "WeakMLP",
+    "physics": "Physics Model",
+    "elasticnet": "Regularized Regression",
+    "weak_mlp": "Data-Driven MLP",
     "mlp_state": "MLP_STATE",
     "pinn_no_dynamics": "PINN_NO_DYNAMICS",
     "pinn_fulltrip": "PINN_FULLTRIP",
