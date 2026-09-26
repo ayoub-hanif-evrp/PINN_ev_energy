@@ -11,32 +11,31 @@ This folder is the only archival location for conference-paper outputs.
 
 Runtime dumps under `outputs/` and the local HELECAR-D copy are not paper artifacts.
 
-## Recommended main figures
+## Recommended main manuscript figures
 
-1. `fig01_method.png`
-2. `fig02_observed_vs_predicted.png`
-3. `fig04_mae_ci.png`
-4. `fig08_data_scarcity_learning_curve.png`
-5. `fig09_pinn_vs_mlp.png`
-6. `fig10_soc_reconstruction.png`
-7. `fig13_pinn_training_convergence.png`
+The 10-page paper uses these four figures only:
 
-If page space permits:
+1. `fig01_method.png` — method overview, including the depletion head $\hat{D}(t)$
+2. `fig02_observed_vs_predicted.png` — observed versus predicted trip energy
+3. `fig04_mae_ci.png` — trip-energy MAE and 95% bootstrap intervals
+4. `fig08_data_scarcity_learning_curve.png` — learning curve under fewer training trips
 
-8. `fig12_feasibility.png`
-9. `fig15_trip_energy_comparison.png`
+## Secondary / optional figures
 
-## Secondary / repository figures
+Keep these for slides, reviewer discussion, or a supplement. They are not part of the 10-page figure set.
 
 - `fig03_trip_errors.png`
 - `fig05_residuals.png`
 - `fig06_error_ecdf.png`
 - `fig07_trip_error_heatmap.png`
+- `fig09_pinn_vs_mlp.png`
+- `fig10_soc_reconstruction.png`
 - `fig11_window_consistency.png` — Data-Driven MLP and PINN only
+- `fig12_feasibility.png`
+- `fig13_pinn_training_convergence.png`
 - `fig14_validation_window_scales.png`
+- `fig15_trip_energy_comparison.png`
 - `fig16_trajectory_mae.png`
-
-Do not force every figure into the conference manuscript.
 
 Regenerate from cached experiment outputs:
 

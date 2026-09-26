@@ -1,99 +1,79 @@
 # Figure captions
 
-Generated for the manuscript. Numbers described in the captions follow the result tables.
+The 10-page manuscript uses the four captions below. The remaining captions are optional repository material.
 
-### Figure 1
+## Main manuscript figures
+
+### Paper Figure 1
 
 `results/figures/fig01_method.png`
 
-Fig. 1. Discrete-time physics-informed estimator. Driving and environment variables feed a longitudinal physics branch and a bounded neural correction. Predicted battery power is the sum of the two branches, integrated with the trapezoidal rule, and supervised by multi-window energy derived from SoC. SoC is training and evaluation supervision only; it is not a power-branch input. There are no instantaneous battery-power labels.
+Fig. 1. How the estimator turns a trip into an energy prediction. The inputs are driving and environment variables. Vehicle physics proposes a power, a neural network adds a bounded correction, and the two are added. Integrating that power gives the trip energy. A second output, $\hat{D}(t)$, is the predicted SoC drop; it starts at zero and is built from the same network plus how far the trip has progressed. Training asks this drop to agree with the energy just used. The only supervision is the SoC change on short windows and on the full trip. SoC is not an input, and battery power is never measured.
 
-### Figure 2
+### Paper Figure 2
 
 `results/figures/fig02_observed_vs_predicted.png`
 
-Fig. 2. Leave-one-trip-out observed versus predicted trip energy. Each marker is one held-out trip. Neural predictions are averaged over three training seeds for display. The diagonal line is perfect agreement. Annotated MAE is the mean of per-trip absolute errors after averaging absolute error across seeds; annotated R² matches the pooled-seed value in Table 3.
+Fig. 2. Leave-one-trip-out observed versus predicted trip energy. Each point is one held-out trip. A point on the line is an exact prediction; a point below the line is an under-prediction. Neural predictions are averaged over three training seeds for display. All four panels use the same axes. Annotated MAE is the mean of per-trip absolute errors after averaging absolute error across seeds; annotated $R^2$ matches Table 3.
 
-### Figure 3
-
-`results/figures/fig03_trip_errors.png`
-
-Fig. 3. Absolute trip-energy error for each of the 17 held-out trips. Points are individual trips. The horizontal mark is the median and the vertical bar is the interquartile range. Neural errors average absolute error across seeds within each trip.
-
-### Figure 4
+### Paper Figure 3
 
 `results/figures/fig04_mae_ci.png`
 
-Fig. 4. Leave-one-trip-out trip-energy MAE. The marker is the mean absolute error across held-out trips and the whisker is a 95% trip-level bootstrap interval. Neural values average absolute error across seeds within each trip before the bootstrap. Methods are shown in a fixed order, not sorted by error.
+Fig. 3. Leave-one-trip-out trip-energy MAE. Each marker is the mean absolute error across the 17 held-out trips, and the whisker is a 95% trip-level bootstrap interval. The number beside each marker is that MAE. Neural values average absolute error across seeds within each trip before the bootstrap. Methods are shown in a fixed order.
 
-### Figure 5
-
-`results/figures/fig05_residuals.png`
-
-Fig. 5. Trip-energy residual (predicted minus observed) against observed trip energy. The horizontal line is zero residual. Neural predictions are seed-averaged for display. Each panel uses the same axes.
-
-### Figure 6
-
-`results/figures/fig06_error_ecdf.png`
-
-Fig. 6. Empirical distribution of absolute trip-energy error. The vertical axis is the fraction of held-out trips whose absolute error is at most the value on the horizontal axis. The curve is a step function. Neural errors average absolute error across seeds within each trip.
-
-### Figure 7
-
-`results/figures/fig07_trip_error_heatmap.png`
-
-Fig. 7. Absolute trip-energy error for every held-out trip and method. Rows follow trajectory order T1, then T2, then T3, and file order within each trajectory. Neural cells average absolute error across seeds. Darker cells are larger errors.
-
-### Figure 8
+### Paper Figure 4
 
 `results/figures/fig08_data_scarcity_learning_curve.png`
 
-Fig. 8. Held-out trip-energy MAE as a function of the number of training trips. Panel (a) shows all trainable methods on a logarithmic error scale because Ridge exhibits large errors in the severe low-data regime. Panel (b) is a linear-scale view of the neural comparison. Small markers are replicate-level mean MAEs; large markers are the mean of those replicates and error bars are their standard deviation. Neural replicates combine initialization seeds and predefined subset repeats. Ridge is deterministic given its training subset, so the full 16-trip fit is a single point. The dashed line is the Physics Model, which does not use training trips. A lower logarithmic error bar that would cross zero is omitted; the replicate markers still show that spread.
+Fig. 4. Trip-energy error as the number of training trips grows. Panel (a) uses a logarithmic axis so that Ridge Regression, which reaches several kWh when few trips are available, can be shown together with the neural models; the printed numbers are the Ridge means above 1 kWh. Panel (b) uses a linear axis and shows only the Data-Driven MLP and the PINN. Markers are means across predefined training subsets, and error bars are the standard deviation of those subset means. Neural subsets also vary the initialization seed. Ridge is deterministic for a given subset, so the 16-trip point has no error bar. The dashed line is the Physics Model, which does not train on trips. A lower logarithmic error bar that would cross zero is omitted.
 
-### Figure 9
+## Optional / repository figures
 
-`results/figures/fig09_pinn_vs_mlp.png`
+### `fig03_trip_errors.png`
 
-Fig. 9. Paired absolute trip-energy error of the PINN and the Data-Driven MLP. Each marker is one held-out trip, with marker shape indicating trajectory. Absolute errors are averaged across seeds within the trip. Points below the diagonal have lower PINN absolute error.
+Optional. Absolute trip-energy error for each of the 17 held-out trips. Points are individual trips. The horizontal mark is the median and the vertical bar is the interquartile range. Neural errors average absolute error across seeds within each trip.
 
-### Figure 10
+### `fig05_residuals.png`
 
-`results/figures/fig10_soc_reconstruction.png`
+Optional. Trip-energy residual (predicted minus observed) against observed trip energy. The horizontal line is zero residual. Neural predictions are seed-averaged for display. Each panel uses the same axes.
 
-Fig. 10. Observed quantized SoC and SoC reconstructed by integrating predicted PINN power on one predetermined trip from each trajectory. When reconstructions for seeds 0, 1, and 2 are stored, the line is their mean and the band is ±1 standard deviation across seeds. Only the initial test SoC initializes the rollout. Test SoC is not a model input, and the curves are not a validation of instantaneous battery power.
+### `fig06_error_ecdf.png`
 
-### Figure 11
+Optional. Empirical distribution of absolute trip-energy error. The vertical axis is the fraction of held-out trips whose absolute error is at most the value on the horizontal axis. Neural errors average absolute error across seeds within each trip.
 
-`results/figures/fig11_window_consistency.png`
+### `fig07_trip_error_heatmap.png`
 
-Fig. 11. Neural window-energy consistency on held-out non-overlapping evaluation windows. Markers are the mean, across trips, of the seed-averaged window-energy MAE. Error bars are the standard deviation across held-out trips. Physics Model and Ridge Regression are absent because the stored window evaluation does not contain them. This is not a four-method benchmark.
+Optional. Absolute trip-energy error for every held-out trip and method. Rows follow trajectory order T1, then T2, then T3. Neural cells average absolute error across seeds.
 
-### Figure 12
+### `fig09_pinn_vs_mlp.png`
 
-`results/figures/fig12_feasibility.png`
+Optional. Paired absolute trip-energy error of the PINN and the Data-Driven MLP. Each marker is one held-out trip, with marker shape indicating trajectory. Absolute errors are averaged across seeds within the trip. Points below the diagonal have lower PINN absolute error.
 
-Fig. 12. Battery-feasibility decision errors at reserve margins of 5%, 10%, 15%, and 20% SoC. Panel (a) is the false-safe rate and panel (b) is the overly conservative rate, each as a percentage of held-out trips. This assessment is not an EV routing algorithm.
+### `fig10_soc_reconstruction.png`
 
-### Figure 13
+Optional. Observed quantized SoC and SoC reconstructed by integrating predicted PINN power on one predetermined trip from each trajectory. When reconstructions for seeds 0, 1, and 2 are stored, the line is their mean and the band is ±1 standard deviation across seeds. Only the initial test SoC initializes the rollout. Test SoC is not a model input, and the curves are not a validation of instantaneous battery power.
 
-`results/figures/fig13_pinn_training_convergence.png`
+### `fig11_window_consistency.png`
 
-Fig. 13. PINN training record for the predetermined selection run on held-out trip T1_03_29_2021, seed 0. Panel (a) is the inner-validation multi-window energy MAE used for early stopping; the vertical line marks the epoch with the lowest value in this history. Panel (a) is training-only inner validation, not outer-test performance. Panel (b) shows the training objective and the weighted contributions that enter it, on a logarithmic axis.
+Optional. Neural window-energy consistency on held-out non-overlapping evaluation windows. Markers are the mean, across trips, of the seed-averaged window-energy MAE. Error bars are the standard deviation across held-out trips. Physics Model and Ridge Regression are absent because the stored window evaluation does not contain them.
 
-### Figure 14
+### `fig12_feasibility.png`
 
-`results/figures/fig14_validation_window_scales.png`
+Optional. Battery-feasibility decision errors at reserve margins of 5%, 10%, 15%, and 20% SoC. Panel (a) is the false-safe rate and panel (b) is the overly conservative rate, each as a percentage of held-out trips. This assessment is not an EV routing algorithm.
 
-Fig. 14. Inner-validation window-energy MAE by time scale for the same predetermined PINN selection run as Fig. 13. This is training-only inner validation, not outer-test performance.
+### `fig13_pinn_training_convergence.png`
 
-### Figure 15
+Optional. PINN training record for the predetermined selection run on held-out trip T1_03_29_2021, seed 0. Panel (a) is the inner-validation multi-window energy MAE used for early stopping; the vertical line marks the epoch with the lowest value in this history. Panel (a) is training-only inner validation, not outer-test performance. Panel (b) shows the training objective and the weighted contributions that enter it, on a logarithmic axis.
 
-`results/figures/fig15_trip_energy_comparison.png`
+### `fig14_validation_window_scales.png`
 
-Fig. 15. Observed and predicted trip energy for every held-out trip, separated by trajectory. Neural predictions are averaged over three training seeds for display. The black marker is the observed energy.
+Optional. Inner-validation window-energy MAE by time scale for the same predetermined PINN selection run. This is training-only inner validation, not outer-test performance.
 
-### Figure 16
+### `fig15_trip_energy_comparison.png`
 
-`results/figures/fig16_trajectory_mae.png`
+Optional. Observed and predicted trip energy for every held-out trip, separated by trajectory. Neural predictions are averaged over three training seeds for display. The black marker is the observed energy.
 
-Fig. 16. Absolute trip-energy error by trajectory. Small markers are individual held-out trips and large markers are the trajectory mean. Sample sizes are 4 (T1), 3 (T2), and 10 (T3). Neural errors average absolute error across seeds within each trip.
+### `fig16_trajectory_mae.png`
+
+Optional. Absolute trip-energy error by trajectory. Small markers are individual held-out trips and large markers are the trajectory mean. Sample sizes are 4 (T1), 3 (T2), and 10 (T3). Neural errors average absolute error across seeds within each trip.

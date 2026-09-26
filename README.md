@@ -164,11 +164,11 @@ What they do not support: recovery of instantaneous battery power; a new EVRP al
 
 ## 14. Figures
 
-All final figures are PNG, 400 dpi, under [`results/figures/`](results/figures/). The recommended subset is listed in [`results/README.md`](results/README.md).
+All final figures are PNG, 400 dpi, under [`results/figures/`](results/figures/). The 10-page manuscript uses four of them: `fig01_method.png`, `fig02_observed_vs_predicted.png`, `fig04_mae_ci.png`, and `fig08_data_scarcity_learning_curve.png`. The rest stay in the repository as optional material. See [`results/README.md`](results/README.md).
 
 | File | Role |
 |---|---|
-| `fig01_method.png` | Discrete-time PINN: physics + neural correction + conservation + multi-window SoC energy supervision. No instantaneous power labels. |
+| `fig01_method.png` | Main paper figure. Physics branch, neural residual, depletion head $\hat{D}(t)$, conservation residual, and multi-window SoC supervision. No instantaneous power labels. |
 | `fig02_observed_vs_predicted.png` | Observed vs predicted trip energy for Physics Model, Ridge Regression, Data-Driven MLP, and PINN. |
 | `fig03_trip_errors.png` | Absolute held-out trip-energy errors (17 trips visible). |
 | `fig04_mae_ci.png` | Trip-energy MAE with 95% trip-level bootstrap intervals. |
@@ -184,8 +184,6 @@ All final figures are PNG, 400 dpi, under [`results/figures/`](results/figures/)
 | `fig14_validation_window_scales.png` | Inner-validation window-energy MAE by time scale for that same run. |
 | `fig15_trip_energy_comparison.png` | Observed and predicted trip energy on every held-out trip, by trajectory. |
 | `fig16_trajectory_mae.png` | Trip absolute errors summarized by trajectory, with the individual trips shown. |
-
-Recommended main-paper figures are listed in [`results/README.md`](results/README.md).
 
 ## 15. Repository Structure
 

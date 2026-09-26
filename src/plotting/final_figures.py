@@ -39,41 +39,73 @@ def _tag(ax: plt.Axes, letter: str) -> None:
 
 def fig01_method(path: Path) -> None:
     apply_style()
-    fig, ax = plt.subplots(figsize=(7.6, 4.5))
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+    fig, ax = plt.subplots(figsize=(7.5, 5.35))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 72)
     ax.axis("off")
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
 
-    def box(x, y, w, h, text, fc="#f4f4f4"):
-        patch = FancyBboxPatch(
-            (x, y),
-            w,
-            h,
-            boxstyle="round,pad=0.008,rounding_size=0.018",
-            linewidth=1.0,
-            edgecolor="#222222",
-            facecolor=fc,
+    def box(x, y, w, h, text, fc):
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y),
+                w,
+                h,
+                boxstyle="round,pad=0.25,rounding_size=0.7",
+                linewidth=1.05,
+                edgecolor="#222222",
+                facecolor=fc,
+            )
         )
-        ax.add_patch(patch)
-        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=9)
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=9.5, linespacing=1.25)
 
     def arrow(x1, y1, x2, y2):
-        ax.add_patch(FancyArrowPatch((x1, y1), (x2, y2), arrowstyle="-|>", mutation_scale=12, lw=1.1, color="#222222"))
+        ax.add_patch(
+            FancyArrowPatch(
+                (x1, y1),
+                (x2, y2),
+                arrowstyle="-|>",
+                mutation_scale=12,
+                lw=1.25,
+                color="#222222",
+                shrinkA=1.5,
+                shrinkB=1.5,
+                clip_on=False,
+            )
+        )
 
-    box(0.01, 0.68, 0.28, 0.28, "Driving / environment\nspeed, acceleration,\ngrade, temperature,\nhumidity, wind,\ntraffic, speed limit", "#eef3f8")
-    box(0.34, 0.82, 0.22, 0.14, "Longitudinal physics\n$P_\\mathrm{physics}(t)$", "#f7f1e8")
-    box(0.34, 0.62, 0.22, 0.14, "Neural correction\n$\\delta P=\\ell\\,\\tanh(\\mathrm{NN}(x_t))$", "#e8f0e8")
-    box(0.60, 0.68, 0.38, 0.22, "$\\hat P(t)=P_\\mathrm{physics}(t)+\\delta P(t)$\nNo instantaneous\nbattery-power labels", "#e8eef7")
-    box(0.60, 0.42, 0.38, 0.18, "Trapezoidal energy integration\n$\\Delta E_i=0.5(\\hat P_i+\\hat P_{i+1})\\,\\Delta t_i/3600$", "#f4f4f4")
-    box(0.02, 0.06, 0.46, 0.26, "Multi-window SoC energy supervision\nSoC used only as training/evaluation\nsupervision, not a power-branch input\nNo instantaneous battery-power labels", "#f4f4f4")
-    box(0.52, 0.06, 0.46, 0.26, "Battery-energy conservation\n$r_i=\\hat D[i+1]-\\hat D[i]-100\\,\\Delta E_i/E_\\mathrm{batt}$\nDiscrete-time PINN (not a PDE PINN)", "#f8ecec")
-    arrow(0.29, 0.90, 0.34, 0.90)
-    arrow(0.29, 0.76, 0.34, 0.70)
-    arrow(0.56, 0.89, 0.60, 0.82)
-    arrow(0.56, 0.69, 0.60, 0.76)
-    arrow(0.79, 0.70, 0.79, 0.60)
-    arrow(0.68, 0.42, 0.40, 0.32)
-    arrow(0.79, 0.42, 0.74, 0.32)
+    box(
+        1.5,
+        32,
+        26,
+        36,
+        "What the model sees\nspeed, acceleration, grade\nweather, traffic\n\nnot SoC\nnot battery power",
+        "#eef3f8",
+    )
+    box(33, 52, 24, 16, "Vehicle physics\npower from the\nvehicle equations", "#f7f1e8")
+    box(33, 32, 24, 16, "Learned correction\na bounded change\nto that power", "#e7f2ea")
+    box(33, 14, 24, 14, "Predicted SoC drop\n$\\hat{D}(t)$, starts at 0", "#e7eef8")
+    box(63, 52, 35, 16, "Predicted power\nphysics + correction\n$\\hat{P}=P_{\\mathrm{physics}}+\\delta P$", "#e8eef7")
+    box(63, 32, 35, 16, "Trip energy\nintegrate that power\nover the trip", "#f4f4f4")
+    box(63, 14, 35, 14, "Consistency check\nSoC drop must match\nthe energy used", "#f8ecec")
+    box(
+        1.5,
+        1.2,
+        96.5,
+        10.2,
+        "Training signal: how much SoC changed, on short windows and the full trip\n"
+        "SoC supervises the model. It is never a power input. Battery power is never measured.",
+        "#f7f7f7",
+    )
+    arrow(27.5, 60, 33, 60)
+    arrow(27.5, 40, 33, 40)
+    arrow(57, 60, 63, 60)
+    arrow(57, 40, 63, 56)
+    arrow(80.5, 52, 80.5, 48)
+    arrow(80.5, 32, 80.5, 28)
+    arrow(45, 32, 45, 28)
+    arrow(57, 21, 63, 21)
+    ax.text(46.4, 30.0, "same network + trip progress", fontsize=9, ha="left", va="center", color="#222222")
     save_png(fig, path)
 
 
@@ -88,15 +120,15 @@ def fig02_observed_vs_predicted(pred: pd.DataFrame, path: Path) -> None:
     lim = (lo - pad, hi + pad)
     for i, (ax, method) in enumerate(zip(axes.ravel(), methods)):
         g = trip.loc[trip["method"] == method]
-        ax.plot(lim, lim, color="0.45", lw=1.2, zorder=0)
+        ax.plot(lim, lim, color="0.45", lw=1.35, zorder=0)
         ax.scatter(
             g["observed_energy_kwh"],
             g["predicted_energy_kwh"],
-            s=46,
+            s=64,
             c=_c(method),
             marker=METHOD_MARKERS.get(method, "o"),
             edgecolors="0.15",
-            linewidths=0.4,
+            linewidths=0.45,
             zorder=2,
         )
         mae = float(trip_absolute_errors(pred, method).mean())
@@ -104,11 +136,13 @@ def fig02_observed_vs_predicted(pred: pd.DataFrame, path: Path) -> None:
         ax.text(
             0.04,
             0.96,
-            f"({LETTERS[i]}) {label(method)}\nMAE = {mae:.3f} kWh\n$R^2$ = {r2:.3f}",
+            f"({LETTERS[i]}) {label(method)}\nMAE = {mae:.3f} kWh\n$R^2$ = {r2:.3f}"
+            + ("\nline = exact match" if i == 0 else ""),
             transform=ax.transAxes,
             va="top",
             ha="left",
-            fontsize=10,
+            fontsize=10.5,
+            bbox={"boxstyle": "round,pad=0.18", "facecolor": "white", "edgecolor": "none", "alpha": 0.88},
         )
         ax.set_xlim(lim)
         ax.set_ylim(lim)
@@ -151,17 +185,27 @@ def fig_mae_ci(pred: pd.DataFrame, path: Path) -> None:
         lo.append(stats["ci_low"])
         hi.append(stats["ci_high"])
     y = np.arange(len(methods))
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    fig, ax = plt.subplots(figsize=(7.2, 3.6))
     xerr = np.vstack([np.array(means) - np.array(lo), np.array(hi) - np.array(means)])
-    ax.errorbar(means, y, xerr=xerr, fmt="none", ecolor="#222222", elinewidth=1.4, capsize=4, zorder=2)
+    ax.errorbar(means, y, xerr=xerr, fmt="none", ecolor="#222222", elinewidth=1.6, capsize=4.5, zorder=2)
     for i, method in enumerate(methods):
-        ax.plot(means[i], y[i], marker=METHOD_MARKERS.get(method, "o"), color=_c(method), ms=9, zorder=3)
-        ax.text(means[i], y[i] - 0.28, f"{means[i]:.3f}", ha="center", va="bottom", fontsize=10)
+        ax.plot(means[i], y[i], marker=METHOD_MARKERS.get(method, "o"), color=_c(method), ms=11, zorder=3)
+        ax.annotate(
+            f"{means[i]:.3f}",
+            (means[i], y[i]),
+            textcoords="offset points",
+            xytext=(0, 9),
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            annotation_clip=False,
+        )
     ax.set_yticks(y)
     ax.set_yticklabels([label(m) for m in methods])
     ax.set_xlabel("Trip-energy MAE (kWh)")
+    ax.text(0.99, 0.03, "whiskers: 95% CI", transform=ax.transAxes, ha="right", va="bottom", fontsize=10, color="0.25")
     ax.set_xlim(left=0)
-    ax.set_ylim(len(methods) - 0.45, -0.72)
+    ax.set_ylim(len(methods) - 0.55, -0.95)
     fig.tight_layout()
     save_png(fig, path)
 
@@ -256,70 +300,102 @@ def fig_data_scarcity_learning_curve(raw: pd.DataFrame, path: Path) -> None:
 
     raw = complete_scarcity_frame(raw)
     apply_style()
-    fig, axes = plt.subplots(1, 2, figsize=(7.5, 4.15))
+    fig, axes = plt.subplots(1, 2, figsize=(7.5, 4.35))
     sizes = (3, 5, 8, 12, 16)
-    rng = np.random.default_rng(1)
+    phys = None
     if "physics" in set(raw["method"]):
         phys = float(raw.loc[raw["method"] == "physics", "absolute_error_kwh"].mean())
         for ax in axes:
-            ax.axhline(phys, color=_c("physics"), ls="--", lw=1.5, label="Physics Model (fixed)", zorder=1)
+            ax.axhline(phys, color=_c("physics"), ls="--", lw=1.6, label="Physics Model", zorder=1)
+
+    def _summary(method: str, n: int) -> tuple[float, float, np.ndarray] | None:
+        values = _replicate_values(raw.loc[(raw["method"] == method) & (raw["n_train"] == n)], method)
+        if values.size == 0:
+            return None
+        mean = float(values.mean())
+        std = float(values.std(ddof=1)) if values.size > 1 else 0.0
+        return mean, std, values
 
     def _draw(ax, methods, log_scale: bool) -> None:
+        plotted_high = []
         for method in methods:
             xs, means, lowers, uppers = [], [], [], []
             for n in sizes:
-                values = _replicate_values(raw.loc[(raw["method"] == method) & (raw["n_train"] == n)], method)
-                if values.size == 0:
+                summary = _summary(method, n)
+                if summary is None:
                     continue
-                jitter = rng.uniform(-0.12, 0.12, values.size)
-                ax.scatter(np.full(values.size, n) + jitter, values, s=18, color=_c(method), alpha=0.35, zorder=2, linewidths=0)
-                mean = float(values.mean())
-                std = float(values.std(ddof=1)) if values.size > 1 else 0.0
+                mean, std, _values = summary
                 xs.append(n)
                 means.append(mean)
-                lower = std if mean > std else 0.0
-                lowers.append(lower)
+                lowers.append(std if mean > std else 0.0)
                 uppers.append(std)
+                plotted_high.append(mean + std)
             ax.errorbar(
                 xs,
                 means,
                 yerr=np.vstack([lowers, uppers]),
                 color=_c(method),
                 marker=METHOD_MARKERS.get(method, "o"),
-                ms=8,
+                ms=9.5,
                 ls=METHOD_LINESTYLES.get(method, "-"),
-                lw=1.8,
-                capsize=3,
+                lw=2.15,
+                capsize=3.5,
+                elinewidth=1.35,
                 label=label(method),
                 zorder=3,
             )
+            if log_scale and method == "ridge":
+                offsets = {3: (-18, 8), 5: (0, 7), 8: (18, 6)}
+                align = {3: "right", 5: "center", 8: "left"}
+                for n, mean, std in zip(xs, means, uppers):
+                    if mean < 1.0 or n not in offsets:
+                        continue
+                    ax.annotate(
+                        f"{mean:.2f}",
+                        (n, mean + std),
+                        textcoords="offset points",
+                        xytext=offsets[n],
+                        ha=align[n],
+                        va="bottom",
+                        fontsize=9.5,
+                        color="#222222",
+                        annotation_clip=False,
+                    )
         ax.set_xlabel("Number of training trips")
         ax.set_xticks(list(sizes))
         if log_scale:
+            from matplotlib.ticker import FixedLocator, FuncFormatter
+
             ax.set_yscale("log")
-            ax.set_ylabel("Held-out trip-energy MAE (kWh, log scale)")
+            ax.yaxis.set_major_locator(FixedLocator([0.3, 1, 3, 10]))
+            ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _pos: f"{value:g}"))
+            ax.set_ylabel("Trip-energy MAE (kWh)")
+            if plotted_high:
+                ax.set_ylim(0.2, max(max(plotted_high) * 1.45, 10))
+            ax.text(0.98, 0.97, "log scale", transform=ax.transAxes, ha="right", va="top", fontsize=10)
         else:
-            ax.set_ylabel("Held-out trip-energy MAE (kWh)")
-            neural = raw.loc[raw["method"].isin(["weak_mlp", "pinn"])]
-            top = 0.85
-            if not neural.empty:
-                highs = []
-                for method in ("weak_mlp", "pinn"):
-                    for n in sizes:
-                        values = _replicate_values(neural.loc[(neural["method"] == method) & (neural["n_train"] == n)], method)
-                        if values.size:
-                            highs.append(float(values.max()))
-                            mean = float(values.mean())
-                            std = float(values.std(ddof=1)) if values.size > 1 else 0.0
-                            highs.append(mean + std)
-                if highs:
-                    top = max(highs) * 1.12
+            ax.set_ylabel("Trip-energy MAE (kWh)")
+            highs = list(plotted_high)
+            if phys is not None:
+                highs.append(phys)
+            top = max(max(highs) * 1.18, 0.85) if highs else 0.85
             ax.set_ylim(0, top)
+            if phys is not None:
+                ax.annotate(
+                    "no training",
+                    (sizes[-1], phys),
+                    textcoords="offset points",
+                    xytext=(-4, 4),
+                    ha="right",
+                    va="bottom",
+                    fontsize=9,
+                    color=_c("physics"),
+                )
 
     _draw(axes[0], [m for m in SCARCITY_METHODS if m in set(raw["method"])], True)
     _draw(axes[1], [m for m in ("weak_mlp", "pinn") if m in set(raw["method"])], False)
-    _tag(axes[0], "a")
-    _tag(axes[1], "b")
+    axes[0].set_title("(a) All methods", loc="left", fontsize=12, fontweight="bold", pad=2)
+    axes[1].set_title("(b) Neural models", loc="left", fontsize=12, fontweight="bold", pad=2)
     handles, labels_ = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels_, loc="upper center", ncol=4, bbox_to_anchor=(0.5, 1.02), frameon=True)
     fig.tight_layout(rect=(0, 0, 1, 0.90))

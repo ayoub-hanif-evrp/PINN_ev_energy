@@ -76,6 +76,9 @@ def _tables(
         "",
         "Generated from `results/tables/`. Do not edit the numbers by hand.",
         "",
+        "For the 10-page manuscript, paste Tables 1, 3, and 4, plus the PINN versus Data-Driven MLP row of Table 5.",
+        "Table 2 is a short method comparison if space remains. Table 6 is optional and is not required in the main text.",
+        "",
         "### Table 1. HELECAR-D data used in this study",
         "",
         "| Characteristic | Value |",
@@ -167,27 +170,55 @@ def _f1(value: float) -> str:
 
 
 def _captions() -> str:
-    rows = [
-        ("1", "fig01_method.png", "Fig. 1. Discrete-time physics-informed estimator. Driving and environment variables feed a longitudinal physics branch and a bounded neural correction. Predicted battery power is the sum of the two branches, integrated with the trapezoidal rule, and supervised by multi-window energy derived from SoC. SoC is training and evaluation supervision only; it is not a power-branch input. There are no instantaneous battery-power labels."),
-        ("2", "fig02_observed_vs_predicted.png", "Fig. 2. Leave-one-trip-out observed versus predicted trip energy. Each marker is one held-out trip. Neural predictions are averaged over three training seeds for display. The diagonal line is perfect agreement. Annotated MAE is the mean of per-trip absolute errors after averaging absolute error across seeds; annotated R² matches the pooled-seed value in Table 3."),
-        ("3", "fig03_trip_errors.png", "Fig. 3. Absolute trip-energy error for each of the 17 held-out trips. Points are individual trips. The horizontal mark is the median and the vertical bar is the interquartile range. Neural errors average absolute error across seeds within each trip."),
-        ("4", "fig04_mae_ci.png", "Fig. 4. Leave-one-trip-out trip-energy MAE. The marker is the mean absolute error across held-out trips and the whisker is a 95% trip-level bootstrap interval. Neural values average absolute error across seeds within each trip before the bootstrap. Methods are shown in a fixed order, not sorted by error."),
-        ("5", "fig05_residuals.png", "Fig. 5. Trip-energy residual (predicted minus observed) against observed trip energy. The horizontal line is zero residual. Neural predictions are seed-averaged for display. Each panel uses the same axes."),
-        ("6", "fig06_error_ecdf.png", "Fig. 6. Empirical distribution of absolute trip-energy error. The vertical axis is the fraction of held-out trips whose absolute error is at most the value on the horizontal axis. The curve is a step function. Neural errors average absolute error across seeds within each trip."),
-        ("7", "fig07_trip_error_heatmap.png", "Fig. 7. Absolute trip-energy error for every held-out trip and method. Rows follow trajectory order T1, then T2, then T3, and file order within each trajectory. Neural cells average absolute error across seeds. Darker cells are larger errors."),
-        ("8", "fig08_data_scarcity_learning_curve.png", "Fig. 8. Held-out trip-energy MAE as a function of the number of training trips. Panel (a) shows all trainable methods on a logarithmic error scale because Ridge exhibits large errors in the severe low-data regime. Panel (b) is a linear-scale view of the neural comparison. Small markers are replicate-level mean MAEs; large markers are the mean of those replicates and error bars are their standard deviation. Neural replicates combine initialization seeds and predefined subset repeats. Ridge is deterministic given its training subset, so the full 16-trip fit is a single point. The dashed line is the Physics Model, which does not use training trips. A lower logarithmic error bar that would cross zero is omitted; the replicate markers still show that spread."),
-        ("9", "fig09_pinn_vs_mlp.png", "Fig. 9. Paired absolute trip-energy error of the PINN and the Data-Driven MLP. Each marker is one held-out trip, with marker shape indicating trajectory. Absolute errors are averaged across seeds within the trip. Points below the diagonal have lower PINN absolute error."),
-        ("10", "fig10_soc_reconstruction.png", "Fig. 10. Observed quantized SoC and SoC reconstructed by integrating predicted PINN power on one predetermined trip from each trajectory. When reconstructions for seeds 0, 1, and 2 are stored, the line is their mean and the band is ±1 standard deviation across seeds. Only the initial test SoC initializes the rollout. Test SoC is not a model input, and the curves are not a validation of instantaneous battery power."),
-        ("11", "fig11_window_consistency.png", "Fig. 11. Neural window-energy consistency on held-out non-overlapping evaluation windows. Markers are the mean, across trips, of the seed-averaged window-energy MAE. Error bars are the standard deviation across held-out trips. Physics Model and Ridge Regression are absent because the stored window evaluation does not contain them. This is not a four-method benchmark."),
-        ("12", "fig12_feasibility.png", "Fig. 12. Battery-feasibility decision errors at reserve margins of 5%, 10%, 15%, and 20% SoC. Panel (a) is the false-safe rate and panel (b) is the overly conservative rate, each as a percentage of held-out trips. This assessment is not an EV routing algorithm."),
-        ("13", "fig13_pinn_training_convergence.png", "Fig. 13. PINN training record for the predetermined selection run on held-out trip T1_03_29_2021, seed 0. Panel (a) is the inner-validation multi-window energy MAE used for early stopping; the vertical line marks the epoch with the lowest value in this history. Panel (a) is training-only inner validation, not outer-test performance. Panel (b) shows the training objective and the weighted contributions that enter it, on a logarithmic axis."),
-        ("14", "fig14_validation_window_scales.png", "Fig. 14. Inner-validation window-energy MAE by time scale for the same predetermined PINN selection run as Fig. 13. This is training-only inner validation, not outer-test performance."),
-        ("15", "fig15_trip_energy_comparison.png", "Fig. 15. Observed and predicted trip energy for every held-out trip, separated by trajectory. Neural predictions are averaged over three training seeds for display. The black marker is the observed energy."),
-        ("16", "fig16_trajectory_mae.png", "Fig. 16. Absolute trip-energy error by trajectory. Small markers are individual held-out trips and large markers are the trajectory mean. Sample sizes are 4 (T1), 3 (T2), and 10 (T3). Neural errors average absolute error across seeds within each trip."),
+    main = [
+        (
+            "1",
+            "fig01_method.png",
+            "Fig. 1. How the estimator turns a trip into an energy prediction. The inputs are driving and environment variables. Vehicle physics proposes a power, a neural network adds a bounded correction, and the two are added. Integrating that power gives the trip energy. A second output, $\\hat{D}(t)$, is the predicted SoC drop; it starts at zero and is built from the same network plus how far the trip has progressed. Training asks this drop to agree with the energy just used. The only supervision is the SoC change on short windows and on the full trip. SoC is not an input, and battery power is never measured.",
+        ),
+        (
+            "2",
+            "fig02_observed_vs_predicted.png",
+            "Fig. 2. Leave-one-trip-out observed versus predicted trip energy. Each point is one held-out trip. A point on the line is an exact prediction; a point below the line is an under-prediction. Neural predictions are averaged over three training seeds for display. All four panels use the same axes. Annotated MAE is the mean of per-trip absolute errors after averaging absolute error across seeds; annotated $R^2$ matches Table 3.",
+        ),
+        (
+            "3",
+            "fig04_mae_ci.png",
+            "Fig. 3. Leave-one-trip-out trip-energy MAE. Each marker is the mean absolute error across the 17 held-out trips, and the whisker is a 95% trip-level bootstrap interval. The number beside each marker is that MAE. Neural values average absolute error across seeds within each trip before the bootstrap. Methods are shown in a fixed order.",
+        ),
+        (
+            "4",
+            "fig08_data_scarcity_learning_curve.png",
+            "Fig. 4. Trip-energy error as the number of training trips grows. Panel (a) uses a logarithmic axis so that Ridge Regression, which reaches several kWh when few trips are available, can be shown together with the neural models; the printed numbers are the Ridge means above 1 kWh. Panel (b) uses a linear axis and shows only the Data-Driven MLP and the PINN. Markers are means across predefined training subsets, and error bars are the standard deviation of those subset means. Neural subsets also vary the initialization seed. Ridge is deterministic for a given subset, so the 16-trip point has no error bar. The dashed line is the Physics Model, which does not train on trips. A lower logarithmic error bar that would cross zero is omitted.",
+        ),
     ]
-    lines = ["# Figure captions", "", "Generated for the manuscript. Numbers described in the captions follow the result tables.", ""]
-    for number, filename, text in rows:
-        lines += [f"### Figure {number}", "", f"`results/figures/{filename}`", "", text, ""]
+    optional = [
+        ("fig03_trip_errors.png", "Absolute trip-energy error for each of the 17 held-out trips. Points are individual trips. The horizontal mark is the median and the vertical bar is the interquartile range. Neural errors average absolute error across seeds within each trip."),
+        ("fig05_residuals.png", "Trip-energy residual (predicted minus observed) against observed trip energy. The horizontal line is zero residual. Neural predictions are seed-averaged for display. Each panel uses the same axes."),
+        ("fig06_error_ecdf.png", "Empirical distribution of absolute trip-energy error. The vertical axis is the fraction of held-out trips whose absolute error is at most the value on the horizontal axis. Neural errors average absolute error across seeds within each trip."),
+        ("fig07_trip_error_heatmap.png", "Absolute trip-energy error for every held-out trip and method. Rows follow trajectory order T1, then T2, then T3. Neural cells average absolute error across seeds."),
+        ("fig09_pinn_vs_mlp.png", "Paired absolute trip-energy error of the PINN and the Data-Driven MLP. Each marker is one held-out trip, with marker shape indicating trajectory. Absolute errors are averaged across seeds within the trip. Points below the diagonal have lower PINN absolute error."),
+        ("fig10_soc_reconstruction.png", "Observed quantized SoC and SoC reconstructed by integrating predicted PINN power on one predetermined trip from each trajectory. When reconstructions for seeds 0, 1, and 2 are stored, the line is their mean and the band is ±1 standard deviation across seeds. Only the initial test SoC initializes the rollout. Test SoC is not a model input, and the curves are not a validation of instantaneous battery power."),
+        ("fig11_window_consistency.png", "Neural window-energy consistency on held-out non-overlapping evaluation windows. Markers are the mean, across trips, of the seed-averaged window-energy MAE. Error bars are the standard deviation across held-out trips. Physics Model and Ridge Regression are absent because the stored window evaluation does not contain them."),
+        ("fig12_feasibility.png", "Battery-feasibility decision errors at reserve margins of 5%, 10%, 15%, and 20% SoC. Panel (a) is the false-safe rate and panel (b) is the overly conservative rate, each as a percentage of held-out trips. This assessment is not an EV routing algorithm."),
+        ("fig13_pinn_training_convergence.png", "PINN training record for the predetermined selection run on held-out trip T1_03_29_2021, seed 0. Panel (a) is the inner-validation multi-window energy MAE used for early stopping; the vertical line marks the epoch with the lowest value in this history. Panel (a) is training-only inner validation, not outer-test performance. Panel (b) shows the training objective and the weighted contributions that enter it, on a logarithmic axis."),
+        ("fig14_validation_window_scales.png", "Inner-validation window-energy MAE by time scale for the same predetermined PINN selection run. This is training-only inner validation, not outer-test performance."),
+        ("fig15_trip_energy_comparison.png", "Observed and predicted trip energy for every held-out trip, separated by trajectory. Neural predictions are averaged over three training seeds for display. The black marker is the observed energy."),
+        ("fig16_trajectory_mae.png", "Absolute trip-energy error by trajectory. Small markers are individual held-out trips and large markers are the trajectory mean. Sample sizes are 4 (T1), 3 (T2), and 10 (T3). Neural errors average absolute error across seeds within each trip."),
+    ]
+    lines = [
+        "# Figure captions",
+        "",
+        "The 10-page manuscript uses the four captions below. The remaining captions are optional repository material.",
+        "",
+        "## Main manuscript figures",
+        "",
+    ]
+    for number, filename, text in main:
+        lines += [f"### Paper Figure {number}", "", f"`results/figures/{filename}`", "", text, ""]
+    lines += ["## Optional / repository figures", ""]
+    for filename, text in optional:
+        lines += [f"### `{filename}`", "", f"Optional. {text}", ""]
     return "\n".join(lines)
 
 
@@ -215,28 +246,30 @@ def _results(
     lines = [
         "# Results notes",
         "",
-        "Draft sentences generated from the canonical tables. They are a writing aid, not a claim beyond those tables.",
+        "Writing aid for a 10-page paper. The main text follows four figures: the method diagram, the observed-versus-predicted panels, the MAE summary, and the data-scarcity curve. Sentences below are generated from the canonical tables.",
         "",
-        "### Main trip-energy estimation",
+        "### Method",
+        "",
+        "The estimator has no instantaneous battery-power labels. Driving and environment variables enter an analytical physics branch and a bounded neural residual; predicted power is their sum and is integrated to trip energy. A depletion head forms $\\hat{D}(t)$ from the shared neural state and trip progress, with $\\hat{D}(0)=0$. The conservation residual links that depletion to the integrated energy. Multi-window SoC energy supervises the integral and the depletion head. SoC is not a power-branch input.",
+        "",
+        "### Main leave-one-trip-out comparison",
         "",
         (
             f"On 17-fold leave-one-trip-out, the point-estimate trip-energy MAEs were "
             f"{mae('Physics Model')} kWh (Physics Model), {mae('Ridge Regression')} kWh (Ridge Regression), "
             f"{mae('Data-Driven MLP')} kWh (Data-Driven MLP), and {mae('PINN')} kWh (PINN)."
         ),
+        "PINN has the lowest point-estimate MAE. The observed-versus-predicted panels use one marker per held-out trip, with neural predictions averaged across seeds for display.",
+        "",
+        "### Paired neural comparison",
+        "",
         (
-            f"The paired mean difference in absolute error, PINN minus Physics Model, was "
-            f"{_signed(phys_row['mean_absolute_error_difference_kwh'])} kWh "
-            f"(95% paired bootstrap [{_f3(phys_row['bootstrap_CI_low'])}, {_f3(phys_row['bootstrap_CI_high'])}]; "
-            f"Wilcoxon p = {_p(phys_row['Wilcoxon_p'])})."
+            f"The paired mean difference, PINN absolute error minus Data-Driven MLP absolute error, was "
+            f"{_signed(mlp_row['mean_absolute_error_difference_kwh'])} kWh "
+            f"(95% paired bootstrap [{_f3(mlp_row['bootstrap_CI_low'])}, {_f3(mlp_row['bootstrap_CI_high'])}]; "
+            f"n = {int(mlp_row['n_trips'])}; Wilcoxon p = {_p(mlp_row['Wilcoxon_p'])}, a secondary paired test)."
         ),
-        (
-            f"The paired mean difference, PINN minus Ridge Regression, was "
-            f"{_signed(ridge_row['mean_absolute_error_difference_kwh'])} kWh "
-            f"(95% paired bootstrap [{_f3(ridge_row['bootstrap_CI_low'])}, {_f3(ridge_row['bootstrap_CI_high'])}]; "
-            f"Wilcoxon p = {_p(ridge_row['Wilcoxon_p'])})."
-        ),
-        "Separate MAE intervals are not used as a test of these paired differences.",
+        "A negative difference means lower PINN absolute error. Seeds were averaged within each trip and were not treated as independent trips. Separate MAE intervals are not used as a test of the paired difference.",
         "",
         "### Data-scarcity behaviour",
         "",
@@ -251,28 +284,31 @@ def _results(
             f"and {_f3(pinn['MAE_kWh'])} ± {_f3(pinn['uncertainty'])} kWh for the PINN."
         )
     lines += [
-        "Ridge exhibited large variability in the subsets with 3, 5, and 8 training trips. The PINN point-estimate MAE stayed below the Data-Driven MLP at each reported training size.",
+        "Ridge exhibited large variability in the subsets with 3, 5, and 8 training trips. The PINN point-estimate MAE stayed below the Data-Driven MLP at each reported training size. Performance of the neural models remained comparatively stable as the training set grew from 8 to 16 trips.",
         "",
-        "### PINN vs Data-Driven MLP",
+        "### Secondary supporting material",
         "",
         (
-            f"The paired mean difference, PINN absolute error minus Data-Driven MLP absolute error, was "
-            f"{_signed(mlp_row['mean_absolute_error_difference_kwh'])} kWh "
-            f"(95% paired bootstrap [{_f3(mlp_row['bootstrap_CI_low'])}, {_f3(mlp_row['bootstrap_CI_high'])}]; "
-            f"n = {int(mlp_row['n_trips'])}; Wilcoxon p = {_p(mlp_row['Wilcoxon_p'])})."
+            f"The paired mean difference, PINN minus Physics Model, was "
+            f"{_signed(phys_row['mean_absolute_error_difference_kwh'])} kWh "
+            f"(95% paired bootstrap [{_f3(phys_row['bootstrap_CI_low'])}, {_f3(phys_row['bootstrap_CI_high'])}]; "
+            f"Wilcoxon p = {_p(phys_row['Wilcoxon_p'])})."
         ),
-        "A negative difference means lower PINN absolute error. Seeds were averaged within each trip and were not treated as independent trips.",
-        "",
-        "### Multi-window consistency",
+        (
+            f"The paired mean difference, PINN minus Ridge Regression, was "
+            f"{_signed(ridge_row['mean_absolute_error_difference_kwh'])} kWh "
+            f"(95% paired bootstrap [{_f3(ridge_row['bootstrap_CI_low'])}, {_f3(ridge_row['bootstrap_CI_high'])}]; "
+            f"Wilcoxon p = {_p(ridge_row['Wilcoxon_p'])}). "
+            "That interval includes zero, so the full-data PINN–Ridge difference is not resolved by this paired test."
+        ),
         "",
     ]
     window_line = _window_sentence(window_csv)
     lines.append(window_line)
     lines += [
         "",
-        "### Battery-feasibility sensitivity",
-        "",
         (
+            "Battery-feasibility sensitivity is optional for the main text. "
             f"At a 20% reserve, the false-safe rate was {_f2(p20['false_safe_pct'])}% for the Physics Model "
             f"and {_f2(n20['false_safe_pct'])}% for the PINN. "
             f"The corresponding overly conservative rates were {_f2(p20['overly_conservative_pct'])}% and {_f2(n20['overly_conservative_pct'])}%."
