@@ -20,7 +20,7 @@ The paper comparison contains four methods: Physics Model, Ridge Regression, Dat
 
 Sample-to-sample SoC differences are too quantized and noisy to treat as instantaneous power. Differentiating SoC at 1 Hz would treat a ~0.02 percentage-point step as an energy label of about 1.2 Wh and collapse supervision onto noise.
 
-There are **no direct instantaneous battery-power labels**. The model predicts latent battery power and is supervised indirectly through integrated energy. SoC is label information, not a neural-network input. The physics-informed structure is a candidate inductive bias for that weakly supervised neural estimator. On the 17-trip leave-one-trip-out comparison, PINN has the lowest point-estimate MAE. Its trip-level MAE interval still overlaps the Ridge interval.
+There are **no direct instantaneous battery-power labels**. The model predicts latent battery power and is supervised indirectly through integrated energy. SoC is label information, not a neural-network input. The physics-informed structure is a candidate inductive bias for that weakly supervised neural estimator. On the 17-trip leave-one-trip-out comparison, PINN has the lowest point-estimate MAE. The paired PINN-versus-Ridge absolute-error difference has a 95% interval that includes zero.
 
 ## 3. Dataset
 
@@ -142,7 +142,7 @@ Numbers below match [`results/tables/`](results/tables/). Do not rank methods wi
 | Data-Driven MLP | 0.475 | [0.312, 0.655] | 0.629 | 16.34 | 17.93 | +0.191 | 0.734 |
 | PINN | 0.295 | [0.209, 0.392] | 0.373 | 11.51 | 11.13 | −0.052 | 0.906 |
 
-PINN has the lowest point-estimate MAE. That MAE is lower than Data-Driven MLP (paired mean difference −0.180 kWh, 95% trip bootstrap [−0.316, −0.056], Wilcoxon p = 0.020) and lower than the Physics Model. The PINN and Ridge MAE intervals overlap. Ridge is close to unbiased; the Physics Model under-predicts every trip in this split (bias equals −MAE).
+PINN has the lowest point-estimate MAE. The paired difference versus the Data-Driven MLP is −0.180 kWh (95% paired bootstrap [−0.316, −0.056], Wilcoxon p = 0.020). The paired difference versus Ridge Regression is −0.073 kWh (95% paired bootstrap [−0.264, 0.110], Wilcoxon p = 0.579). Ridge is close to unbiased; the Physics Model under-predicts every trip in this split (bias equals −MAE).
 
 **Data scarcity** ([`table03_data_scarcity.csv`](results/tables/table03_data_scarcity.csv)), held-out MAE in kWh. Uncertainty in parentheses is the standard deviation of replicate-level means. Neural replicates are seed × subset repeat. Ridge counts each distinct training subset once, so \(n=16\) has one Ridge run:
 
@@ -158,13 +158,13 @@ At 3, 5, and 8 training trips, Ridge MAE is higher and much more variable than e
 
 **Feasibility** ([`table04_feasibility.csv`](results/tables/table04_feasibility.csv)): at a 20% reserve, the Physics Model false-safe rate is 17.6% and the PINN false-safe rate is 5.9%. The Physics Model produces more false-safe decisions because it systematically under-predicts trip energy.
 
-What the results support: the physics-informed structure lowers neural trip-energy error relative to the comparable Data-Driven MLP under the same weak SoC supervision, including when few training trips are available. PINN also has a lower full-data point-estimate MAE than Ridge Regression, without a sharp separation of their bootstrap intervals. Ridge is unstable when only a few training trips are available.
+What the results support: the physics-informed structure lowers neural trip-energy error relative to the comparable Data-Driven MLP under the same weak SoC supervision, including when few training trips are available. PINN also has a lower full-data point-estimate MAE than Ridge Regression; the paired interval for that difference includes zero. Ridge is unstable when only a few training trips are available.
 
-What they do not support: recovery of instantaneous battery power; a new EVRP algorithm; a claim that the PINN–Ridge full-data gap is sharply resolved by the trip-level intervals.
+What they do not support: recovery of instantaneous battery power; a new EVRP algorithm; treating the paired PINN–Ridge difference as resolved when its interval includes zero.
 
 ## 14. Figures
 
-All final figures are PNG, 300 dpi, under [`results/figures/`](results/figures/).
+All final figures are PNG, 400 dpi, under [`results/figures/`](results/figures/). The recommended subset is listed in [`results/README.md`](results/README.md).
 
 | File | Role |
 |---|---|
@@ -175,12 +175,15 @@ All final figures are PNG, 300 dpi, under [`results/figures/`](results/figures/)
 | `fig05_residuals.png` | Trip-energy residual versus observed energy. |
 | `fig06_error_ecdf.png` | Empirical distribution of absolute trip-energy error. |
 | `fig07_trip_error_heatmap.png` | Per-trip absolute error, ordered by trajectory. |
-| `fig08_data_scarcity.png` | Held-out MAE vs number of training trips. |
+| `fig08_data_scarcity_learning_curve.png` | Held-out MAE versus number of training trips, with a logarithmic panel and a neural zoom. |
 | `fig09_pinn_vs_mlp.png` | Paired absolute error, PINN versus Data-Driven MLP. |
 | `fig10_soc_reconstruction.png` | Observed quantized SoC vs SoC reconstructed by integrating predicted power on three predetermined trips. |
 | `fig11_window_consistency.png` | Held-out window-energy MAE by time scale for Data-Driven MLP and PINN. |
 | `fig12_feasibility.png` | Routing-oriented false-safe and overly conservative rates. |
-| `fig13_training_loss.png` | Supplementary training-loss curves for one predetermined PINN fold and seed. |
+| `fig13_pinn_training_convergence.png` | Inner-validation multi-window MAE and weighted training contributions for one predetermined PINN fold and seed. |
+| `fig14_validation_window_scales.png` | Inner-validation window-energy MAE by time scale for that same run. |
+| `fig15_trip_energy_comparison.png` | Observed and predicted trip energy on every held-out trip, by trajectory. |
+| `fig16_trajectory_mae.png` | Trip absolute errors summarized by trajectory, with the individual trips shown. |
 
 Recommended main-paper figures are listed in [`results/README.md`](results/README.md).
 

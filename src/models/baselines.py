@@ -1,4 +1,4 @@
-"""LOTO baselines: aggregate Wh/km and physics-only energy."""
+"""LOTO physics-only energy baseline."""
 
 from __future__ import annotations
 
@@ -6,27 +6,9 @@ from typing import Any
 
 import numpy as np
 
-from data.features import trip_level_features
 from data.preprocessing import ProcessedTrip
 from physics.parameters import VehicleParameters
 from physics.vehicle_model import observed_energy_kwh, predict_trip_physics
-
-
-def constant_wh_per_km(train_trips: list[ProcessedTrip], battery_capacity_kwh: float) -> float:
-    """Training-only aggregate consumption: Σ E_Wh / Σ distance_km."""
-    energy_wh = 0.0
-    distance_km = 0.0
-    for trip in train_trips:
-        feats = trip_level_features(trip, battery_capacity_kwh=battery_capacity_kwh)
-        energy_wh += float(feats["e_obs_kwh"]) * 1000.0
-        distance_km += float(feats["distance_km"])
-    if distance_km <= 1e-12:
-        return 0.0
-    return energy_wh / distance_km
-
-
-def constant_consumption_predict(mean_wh_per_km: float, distance_km: float) -> float:
-    return float(mean_wh_per_km) * float(distance_km) / 1000.0
 
 
 def physics_only_predict(

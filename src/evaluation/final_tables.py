@@ -167,33 +167,38 @@ def table04_feasibility(raw: pd.DataFrame) -> pd.DataFrame:
 
 
 def table05_paired_neural(pred: pd.DataFrame) -> pd.DataFrame:
-    """PINN absolute error minus Data-Driven MLP absolute error, one value per trip."""
+    """PINN absolute error minus each comparator, one seed-averaged value per trip."""
     if pred.empty:
         return pred
-    a = trip_absolute_errors(pred, "pinn")
-    b = trip_absolute_errors(pred, "weak_mlp")
-    stats = paired_difference_ci(a, b)
+    rows = []
+    comparators = (
+        ("physics", "PINN - Physics Model"),
+        ("ridge", "PINN - Ridge Regression"),
+        ("weak_mlp", "PINN - Data-Driven MLP"),
+    )
+    pinn = trip_absolute_errors(pred, "pinn")
     try:
         from scipy.stats import wilcoxon
-
-        aligned = pd.concat([a.rename("a"), b.rename("b")], axis=1, join="inner").dropna()
+    except Exception:
+        wilcoxon = None
+    for method, name in comparators:
+        other = trip_absolute_errors(pred, method)
+        stats = paired_difference_ci(pinn, other)
+        aligned = pd.concat([pinn.rename("a"), other.rename("b")], axis=1, join="inner").dropna()
         diff = aligned["a"] - aligned["b"]
-        if len(aligned) >= 3 and not (diff == 0).all():
+        if wilcoxon is not None and len(aligned) >= 3 and not (diff == 0).all():
             _stat, p_value = wilcoxon(diff.to_numpy(), alternative="two-sided", zero_method="wilcox")
             p_value = float(p_value)
         else:
-            p_value = 1.0
-    except Exception:
-        p_value = float("nan")
-    return pd.DataFrame(
-        [
+            p_value = float("nan")
+        rows.append(
             {
-                "comparison": "PINN - Data-Driven MLP",
+                "comparison": name,
                 "n_trips": int(stats["n_trips"]),
                 "mean_absolute_error_difference_kwh": float(stats["mean"]),
                 "bootstrap_CI_low": float(stats["ci_low"]),
                 "bootstrap_CI_high": float(stats["ci_high"]),
                 "Wilcoxon_p": p_value,
             }
-        ]
-    )
+        )
+    return pd.DataFrame(rows)

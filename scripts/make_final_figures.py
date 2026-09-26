@@ -19,15 +19,18 @@ from plotting.final_figures import (  # noqa: E402
     fig01_method,
     fig02_observed_vs_predicted,
     fig03_trip_errors,
-    fig04_data_scarcity,
     fig05_feasibility,
     fig06_soc_reconstruction,
+    fig_data_scarcity_learning_curve,
     fig_error_ecdf,
     fig_mae_ci,
     fig_pinn_vs_mlp,
     fig_residuals,
-    fig_training_loss,
+    fig_training_convergence,
+    fig_trajectory_mae,
+    fig_trip_energy_comparison,
     fig_trip_error_heatmap,
+    fig_validation_window_scales,
     fig_window_consistency,
 )
 
@@ -35,6 +38,8 @@ OLD_NAMES = (
     "fig04_data_scarcity.png",
     "fig05_feasibility.png",
     "fig06_soc_reconstruction.png",
+    "fig08_data_scarcity.png",
+    "fig13_training_loss.png",
 )
 
 
@@ -64,10 +69,12 @@ def main() -> int:
         fig_error_ecdf(pred, fig_dir / "fig06_error_ecdf.png")
         fig_trip_error_heatmap(pred, fig_dir / "fig07_trip_error_heatmap.png")
         fig_pinn_vs_mlp(pred, fig_dir / "fig09_pinn_vs_mlp.png")
+        fig_trip_energy_comparison(pred, fig_dir / "fig15_trip_energy_comparison.png")
+        fig_trajectory_mae(pred, fig_dir / "fig16_trajectory_mae.png")
 
     scarcity = _load(resolve_under_root("outputs/scarcity", root) / profile / "scarcity_per_trip.csv")
     if not scarcity.empty and "ridge" in set(scarcity.get("method", [])):
-        fig04_data_scarcity(scarcity, fig_dir / "fig08_data_scarcity.png")
+        fig_data_scarcity_learning_curve(scarcity, fig_dir / "fig08_data_scarcity_learning_curve.png")
 
     trips = load_processed(config)
     rec_dir = loto / "soc_reconstruction"
@@ -86,7 +93,8 @@ def main() -> int:
         fig05_feasibility(feas, fig_dir / "fig12_feasibility.png")
 
     history = loto / "training_histories" / "T1_03_29_2021__pinn__seed0__select.csv"
-    fig_training_loss(history, fig_dir / "fig13_training_loss.png")
+    fig_training_convergence(history, fig_dir / "fig13_pinn_training_convergence.png")
+    fig_validation_window_scales(history, fig_dir / "fig14_validation_window_scales.png")
 
     for name in OLD_NAMES:
         stale = fig_dir / name

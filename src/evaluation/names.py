@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 METHOD_ORDER = [
-    "constant",
     "physics",
     "ridge",
     "weak_mlp",
@@ -11,7 +10,6 @@ METHOD_ORDER = [
 ]
 
 METHOD_LABELS = {
-    "constant": "Constant",
     "physics": "Physics Model",
     "ridge": "Ridge Regression",
     "weak_mlp": "Data-Driven MLP",
@@ -19,7 +17,6 @@ METHOD_LABELS = {
 }
 
 METHOD_COLORS = {
-    "constant": "#4d4d4d",
     "physics": "#7a7a7a",
     "ridge": "#000000",
     "weak_mlp": "#d55e00",
@@ -27,7 +24,6 @@ METHOD_COLORS = {
 }
 
 METHOD_MARKERS = {
-    "constant": "D",
     "physics": "s",
     "ridge": "o",
     "weak_mlp": "^",
@@ -35,7 +31,6 @@ METHOD_MARKERS = {
 }
 
 METHOD_LINESTYLES = {
-    "constant": ":",
     "physics": "--",
     "ridge": "-",
     "weak_mlp": "-.",

@@ -61,7 +61,7 @@ MAIN_MODEL_FEATURES = (
     "speed_limit_mps",
 )
 
-# Causal trip-progress features for the PINN/MLP_STATE depletion head only.
+# Causal trip-progress features for the PINN depletion head only.
 # Derived from telemetry from trip start through the current sample.
 PROGRESS_FEATURES = (
     "elapsed_s",

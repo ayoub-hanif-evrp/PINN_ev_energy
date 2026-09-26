@@ -21,6 +21,8 @@ from evaluation.final_tables import (  # noqa: E402
     table05_paired_neural,
 )
 from paths import project_root, resolve_under_root  # noqa: E402
+from physics.parameters import load_vehicle_parameters  # noqa: E402
+from paper_docs import write_paper_documents  # noqa: E402
 
 
 def _load(path: Path) -> pd.DataFrame:
@@ -134,7 +136,7 @@ def write_experiment_summary(
             if enet < pinn
             else f"- Ridge and PINN MAE both equal {_fmt(pinn)} kWh at this precision."
         ),
-        "- PINN has the lowest point-estimate MAE in the four-method table. The PINN and Ridge trip-level MAE intervals overlap, so that full-data gap is not a sharp separation.",
+        "- PINN has the lowest point-estimate MAE in the four-method table.",
         "- The physics-informed structure is useful for the neural estimator under weak SoC supervision.",
         "- The data-scarcity experiment is the evidence for behaviour when fewer training trips are available.",
         "",
@@ -166,19 +168,21 @@ def write_experiment_summary(
             "",
         ]
     if t5 is not None and not t5.empty:
-        row = t5.iloc[0]
         lines += [
-            "Paired neural comparison:",
+            "Paired trip-level comparisons:",
             "",
-            "- One value per held-out trip: PINN absolute error minus Data-Driven MLP absolute error, after averaging neural seeds within the trip.",
-            (
-                f"- Mean difference {_fmt(row['mean_absolute_error_difference_kwh'])} kWh "
-                f"(95% trip bootstrap [{_fmt(row['bootstrap_CI_low'])}, {_fmt(row['bootstrap_CI_high'])}]), "
-                f"n={int(row['n_trips'])}, Wilcoxon p={float(row['Wilcoxon_p']):.3f}."
-            ),
-            "- A negative difference means lower PINN absolute error. Seeds are not treated as independent trips.",
+            "- Difference = PINN absolute error minus the comparator absolute error, one value per held-out trip.",
+            "- For neural methods, per-seed absolute errors are averaged within the trip before the comparison. Seeds are not extra trips.",
+            "- A negative difference means lower PINN absolute error. The bootstrap interval is the paired trip-level interval. Wilcoxon p is a secondary paired test.",
             "",
         ]
+        for _, row in t5.iterrows():
+            lines.append(
+                f"- {row['comparison']}: mean {_fmt(row['mean_absolute_error_difference_kwh'])} kWh "
+                f"(95% paired bootstrap [{_fmt(row['bootstrap_CI_low'])}, {_fmt(row['bootstrap_CI_high'])}]), "
+                f"n={int(row['n_trips'])}, Wilcoxon p={float(row['Wilcoxon_p']):.3f}."
+            )
+        lines.append("")
     if not t4.empty:
         p20 = t4.loc[(t4["reserve_soc_pct"] == 20) & (t4["method"] == "Physics Model")]
         n20 = t4.loc[(t4["reserve_soc_pct"] == 20) & (t4["method"] == "PINN")]
@@ -231,7 +235,10 @@ def main() -> int:
         t2.to_csv(out / "table02_main_results.csv", index=False)
     t5 = table05_paired_neural(pred) if not pred.empty else pd.DataFrame()
     if not t5.empty:
-        t5.to_csv(out / "table05_paired_neural_comparison.csv", index=False)
+        t5.to_csv(out / "table05_paired_comparisons.csv", index=False)
+        old = out / "table05_paired_neural_comparison.csv"
+        if old.exists():
+            old.unlink()
 
     scarcity = _load(resolve_under_root("outputs/scarcity", root) / profile / "scarcity_per_trip.csv")
     t3 = table03_scarcity(scarcity) if not scarcity.empty else pd.DataFrame()
@@ -246,6 +253,18 @@ def main() -> int:
         t4.to_csv(out / "table04_feasibility.csv", index=False)
 
     write_experiment_summary(resolve_under_root(args.out, root), t1, t2, t3, t4, t5)
+    results_dir = resolve_under_root(args.out, root)
+    capacity = float(load_vehicle_parameters(config=config).battery_capacity_kwh)
+    write_paper_documents(
+        results_dir,
+        t1,
+        t2,
+        t3,
+        t4,
+        t5,
+        capacity,
+        loto / "window_eval" / "nonoverlapping_test_windows.csv",
+    )
     print(f"Wrote tables under {out}", flush=True)
     return 0
 

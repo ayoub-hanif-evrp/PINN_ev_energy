@@ -29,7 +29,7 @@ from experiment.cache import cache_fingerprint, default_cache_payload, load_cach
 from experiment.data import dataset_file_hashes, load_processed, representative_test_ids
 from experiment.device import resolve_device, set_seeds
 from manifest import git_commit, package_versions, write_manifest
-from models.baselines import constant_consumption_predict, constant_wh_per_km, physics_only_predict
+from models.baselines import physics_only_predict
 from models.ridge import TripRidge
 from paths import project_root, resolve_under_root
 from physics.parameters import VehicleParameters, load_vehicle_parameters
@@ -47,7 +47,7 @@ from training.trainer import (
 )
 from units import energy_kwh_from_power
 
-NEURAL_METHODS = ("weak_mlp", "mlp_state", "pinn_no_dynamics", "pinn_fulltrip", "pinn")
+NEURAL_METHODS = ("weak_mlp", "pinn")
 
 
 def _print(msg: str) -> None:
@@ -258,12 +258,6 @@ def run_loto(
                 f"n_outer={len(outer_train)} n_inner={len(inner_train)} "
                 f"q_inner={q_inner:.4g} q_outer={q_outer:.4g} q_test_posthoc={q_test_posthoc:.4g}"
             )
-
-            if "constant" in methods:
-                mean_whkm = constant_wh_per_km(outer_train, params.battery_capacity_kwh)
-                pred_e = constant_consumption_predict(mean_whkm, obs["distance_km"])
-                rows.append(trip_energy_row(test.trip_id, test.trajectory, "constant", seed, obs["distance_km"], obs["duration_s"], obs["e_obs_kwh"], pred_e))
-                fold_info["methods"]["constant"] = {"mean_wh_per_km": mean_whkm, "predicted_energy_kwh": pred_e}
 
             if "physics" in methods:
                 phys = physics_only_predict(test, params, apply_bounds=bool(config.get("physics", {}).get("apply_power_bounds", False)))

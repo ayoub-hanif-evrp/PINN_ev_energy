@@ -73,7 +73,7 @@ What the full-data LOTO results support:
 - PINN MAE (0.295 kWh) is substantially lower than Data-Driven MLP (0.475 kWh).
 - PINN MAE is substantially lower than the analytical Physics Model (0.780 kWh).
 - PINN MAE (0.295 kWh) is lower than Ridge MAE (0.368 kWh).
-- PINN has the lowest point-estimate MAE in the four-method table. The PINN and Ridge trip-level MAE intervals overlap, so that full-data gap is not a sharp separation.
+- PINN has the lowest point-estimate MAE in the four-method table.
 - The physics-informed structure is useful for the neural estimator under weak SoC supervision.
 - The data-scarcity experiment is the evidence for behaviour when fewer training trips are available.
 
@@ -93,11 +93,15 @@ Data-scarcity detail (3 seeds, predefined repeats):
 - Compare PINN with Data-Driven MLP at each training size above; do not collapse the curve into a single ranking.
 - Main-table PINN MAE averages LOTO seeds 0/1/2 on all 16 remaining trips. Scarcity n=16 reuses those same predictions, so the scarcity n=16 PINN entry is the mean of the three seed-wise trip MAEs.
 
-Paired neural comparison:
+Paired trip-level comparisons:
 
-- One value per held-out trip: PINN absolute error minus Data-Driven MLP absolute error, after averaging neural seeds within the trip.
-- Mean difference -0.180 kWh (95% trip bootstrap [-0.316, -0.056]), n=17, Wilcoxon p=0.020.
-- A negative difference means lower PINN absolute error. Seeds are not treated as independent trips.
+- Difference = PINN absolute error minus the comparator absolute error, one value per held-out trip.
+- For neural methods, per-seed absolute errors are averaged within the trip before the comparison. Seeds are not extra trips.
+- A negative difference means lower PINN absolute error. The bootstrap interval is the paired trip-level interval. Wilcoxon p is a secondary paired test.
+
+- PINN - Physics Model: mean -0.485 kWh (95% paired bootstrap [-0.604, -0.375]), n=17, Wilcoxon p=0.000.
+- PINN - Ridge Regression: mean -0.073 kWh (95% paired bootstrap [-0.264, 0.110]), n=17, Wilcoxon p=0.579.
+- PINN - Data-Driven MLP: mean -0.180 kWh (95% paired bootstrap [-0.316, -0.056]), n=17, Wilcoxon p=0.020.
 
 Feasibility detail:
 

@@ -18,17 +18,16 @@ from torch import nn
 from data.preprocessing import ProcessedTrip
 from data.schema import EXCLUDED_MAIN_PREDICTORS, MAIN_MODEL_FEATURES, PROGRESS_FEATURES, SOC_LABEL_COLUMNS
 from data.windows import EnergyWindow, huber_delta_kwh
-from models.mlp_state import MLPState
 from models.pinn import PINN
 from models.weak_mlp import WeakMLP
 from physics.parameters import VehicleParameters
 from physics.vehicle_model import predict_trip_physics
 from training.early_stopping import EarlyStopping
-from training.losses import mlp_energy_loss, mlp_state_losses, pinn_losses, scale_balanced_window_mae
+from training.losses import mlp_energy_loss, pinn_losses, scale_balanced_window_mae
 from training.torch_ops import torch_energy_prefix, torch_window_energy
 
-NeuralKind = Literal["mlp", "mlp_state", "pinn", "pinn_no_dynamics"]
-NEURAL_KINDS = ("mlp", "mlp_state", "pinn", "pinn_no_dynamics")
+NeuralKind = Literal["mlp", "pinn"]
+NEURAL_KINDS = ("mlp", "pinn")
 
 
 def _assert_features_safe(names: tuple[str, ...] | list[str]) -> None:
@@ -41,30 +40,24 @@ def _assert_features_safe(names: tuple[str, ...] | list[str]) -> None:
 def method_kind(method: str) -> NeuralKind:
     if method in {"weak_mlp", "mlp"}:
         return "mlp"
-    if method == "mlp_state":
-        return "mlp_state"
-    if method == "pinn_no_dynamics":
-        return "pinn_no_dynamics"
-    if method in {"pinn", "pinn_fulltrip"}:
+    if method == "pinn":
         return "pinn"
     raise ValueError(f"Unknown neural method {method}")
 
 
 def uses_progress(kind: str) -> bool:
-    return kind in {"mlp_state", "pinn", "pinn_no_dynamics"}
+    return kind == "pinn"
 
 
 def uses_physics(kind: str) -> bool:
-    return kind in {"pinn", "pinn_no_dynamics"}
+    return kind == "pinn"
 
 
 def uses_state(kind: str) -> bool:
-    return kind in {"mlp_state", "pinn", "pinn_no_dynamics"}
+    return kind == "pinn"
 
 
 def window_scale_filter(method: str) -> set[str] | None:
-    if method == "pinn_fulltrip":
-        return {"full_trip"}
     return None
 
 
@@ -211,12 +204,6 @@ def _lambdas(config: dict[str, Any], kind: str, lambda_prior: float | None = Non
         "lambda_boundary": float(tr.get("lambda_boundary", 0.0)),
         "lambda_prior": float(lambda_prior if lambda_prior is not None else tr.get("lambda_prior", tr.get("lambda_physics", 0.1))),
     }
-    if kind == "pinn_no_dynamics":
-        lam["lambda_dynamics"] = 0.0
-    if kind == "mlp_state":
-        lam["lambda_dynamics"] = 0.0
-        lam["lambda_prior"] = 0.0
-        lam["lambda_boundary"] = 0.0
     if kind == "mlp":
         lam["lambda_dynamics"] = 0.0
         lam["lambda_state"] = 0.0
@@ -248,13 +235,6 @@ def build_model(kind: str, config: dict[str, Any], seed: int) -> nn.Module:
             power_center_kw=float(tr.get("mlp_power_center_kw", 5.0)),
             power_half_range_kw=float(tr.get("mlp_power_half_range_kw", 30.0)),
         )
-    if kind == "mlp_state":
-        return MLPState(
-            hidden_layers=hidden,
-            activation=str(tr.get("activation", "tanh")),
-            power_center_kw=float(tr.get("mlp_power_center_kw", 5.0)),
-            power_half_range_kw=float(tr.get("mlp_power_half_range_kw", 30.0)),
-        )
     return PINN(
         hidden_layers=hidden,
         activation=str(tr.get("activation", "tanh")),
@@ -266,9 +246,6 @@ def _forward(model: nn.Module, batch: TripBatch, kind: str) -> dict[str, torch.T
     if kind == "mlp":
         p_hat = model(batch.x)
         return {"p_hat": p_hat, "delta": torch.zeros_like(p_hat), "d_hat": torch.full_like(p_hat, float("nan"))}
-    if kind == "mlp_state":
-        p_hat, d_hat = model(batch.x, batch.progress)
-        return {"p_hat": p_hat, "delta": torch.zeros_like(p_hat), "d_hat": d_hat}
     p_hat, delta, d_hat = model(batch.x, batch.p_phy, batch.progress)
     return {"p_hat": p_hat, "delta": delta, "d_hat": d_hat}
 
@@ -289,20 +266,6 @@ def _batch_loss(
         return loss, logs
     if batch.d_obs is None:
         raise RuntimeError("State-supervised training requires training-trip SoC depletion labels.")
-    if kind == "mlp_state":
-        return mlp_state_losses(
-            out["p_hat"],
-            out["d_hat"],
-            batch.d_obs,
-            batch.dt,
-            batch.starts,
-            batch.ends,
-            batch.e_obs,
-            batch.scales,
-            h_win,
-            h_state,
-            lambdas,
-        )
     return pinn_losses(
         out["p_hat"],
         out["delta"],

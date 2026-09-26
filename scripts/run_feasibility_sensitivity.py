@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Routing-oriented battery-feasibility sensitivity on held-out real trips.
 
-Not an EVRP algorithm. No synthetic customers. Methods: Constant, Physics, PINN.
+Not an EVRP algorithm. No synthetic customers. Methods: Physics Model and PINN.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ def run_feasibility(config: dict) -> pd.DataFrame:
     if not pred_path.exists():
         raise SystemExit(f"Need LOTO predictions at {pred_path} before feasibility sensitivity.")
     pred = pd.read_csv(pred_path)
-    methods = ["constant", "physics", "pinn"]
+    methods = ["physics", "pinn"]
     reserves = list(config.get("feasibility", {}).get("reserve_soc_pct", [5, 10, 15, 20]))
     params = load_vehicle_parameters(config=config)
     trips = {t.trip_id: t for t in load_processed(config)}

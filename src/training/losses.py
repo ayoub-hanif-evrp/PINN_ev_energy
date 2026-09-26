@@ -54,7 +54,7 @@ def scale_balanced_window_mae(
     e_obs: torch.Tensor,
     scales: list[str],
 ) -> tuple[float, dict[str, float]]:
-    """Validation score: mean over scales of MAE_s. pinn_fulltrip has one scale."""
+    """Validation score: mean over scales of MAE_s."""
     if e_pred.numel() == 0:
         return float("inf"), {}
     grouped: dict[str, list[int]] = defaultdict(list)
@@ -103,25 +103,6 @@ def _weighted_logs(raw: dict[str, torch.Tensor], lambdas: dict[str, float], tota
         if lam_name in lambdas:
             logs[f"w_{key}"] = float(lambdas[lam_name]) * float(term.detach())
     return logs
-
-
-def mlp_state_losses(
-    p_hat: torch.Tensor,
-    d_hat: torch.Tensor,
-    d_obs: torch.Tensor,
-    dt_s: torch.Tensor,
-    starts: torch.Tensor,
-    ends: torch.Tensor,
-    e_obs: torch.Tensor,
-    scales: list[str],
-    huber_window: float,
-    huber_state: float,
-    lambdas: dict[str, float],
-) -> tuple[torch.Tensor, dict[str, float]]:
-    l_window = mlp_energy_loss(p_hat, dt_s, starts, ends, e_obs, scales, huber_window)
-    l_state = smooth_l1(d_hat - d_obs, huber_state).mean()
-    total = float(lambdas["lambda_window"]) * l_window + float(lambdas["lambda_state"]) * l_state
-    return total, _weighted_logs({"window": l_window, "state": l_state}, lambdas, total)
 
 
 def pinn_losses(

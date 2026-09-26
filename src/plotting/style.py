@@ -1,4 +1,4 @@
-"""Publication matplotlib defaults. PNG only, 300 dpi."""
+"""Publication matplotlib defaults. PNG only, 400 dpi."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
-DPI = 300
+DPI = 400
 
 
 def apply_style() -> None:
@@ -19,12 +19,12 @@ def apply_style() -> None:
             "savefig.facecolor": "white",
             "savefig.edgecolor": "white",
             "font.family": "DejaVu Sans",
-            "font.size": 9.5,
-            "axes.labelsize": 10.5,
+            "font.size": 11,
+            "axes.labelsize": 12,
             "axes.titlesize": 11,
-            "xtick.labelsize": 9,
-            "ytick.labelsize": 9,
-            "legend.fontsize": 8.5,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "legend.fontsize": 9.5,
             "axes.linewidth": 0.8,
             "axes.grid": True,
             "grid.alpha": 0.25,
