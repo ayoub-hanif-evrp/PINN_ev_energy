@@ -41,6 +41,8 @@ def table01_dataset(audit: pd.DataFrame) -> pd.DataFrame:
                 "distance_km_max": float(row.get("distance_can_km_max", np.nan)),
                 "distance_km_mean": float(dist_mean) if pd.notna(dist_mean) else float("nan"),
                 "empirical_soc_q_pp": float(q) if pd.notna(q) else float("nan"),
+                "n_samples": int(row["n_samples"]) if pd.notna(row.get("n_samples", np.nan)) else pd.NA,
+                "sampling_interval_s": float(row["sampling_interval_s"]) if pd.notna(row.get("sampling_interval_s", np.nan)) else float("nan"),
                 "n_supervision_windows": n_windows,
             }
         ]

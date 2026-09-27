@@ -5,18 +5,21 @@ Generated from `results/tables/`. Do not edit the numbers by hand.
 For the 10-page manuscript, paste Tables 1, 3, and 4, plus the PINN versus Data-Driven MLP row of Table 5.
 Table 2 is a short method comparison if space remains. Table 6 is optional and is not required in the main text.
 
-### Table 1. HELECAR-D data used in this study
+### Table 1. Characteristics of the HELECAR-D data used in this study
 
 | Characteristic | Value |
 |---|---|
 | Analysed trips | 17 |
 | Trajectory distribution | T1: 4, T2: 3, T3: 10 |
+| Total samples | 55,645 |
+| Approximate sampling interval | 1 s |
 | Trip duration | 15.9–143.0 min |
 | Trip distance | 13.83–59.57 km |
 | Mean trip distance | 29.94 km |
-| Empirical SoC resolution | ~0.02 percentage points |
-| Useful supervision windows | 57,671 |
-| Nominal usable battery capacity used in the model | 6.0 kWh (modelling assumption, not a measured dataset field) |
+| Empirical SoC resolution | ≈ 0.02 percentage points |
+| Assumed usable battery capacity | 6.0 kWh |
+
+The usable battery capacity of 6.0 kWh is a modelling assumption used by the energy model. It is not an independently measured usable-capacity value from this dataset.
 
 ### Table 2. Comparison of evaluated energy-estimation approaches
 

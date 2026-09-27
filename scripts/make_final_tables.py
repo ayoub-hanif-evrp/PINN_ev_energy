@@ -222,11 +222,20 @@ def main() -> int:
     boot = _load(loto / "statistics" / "bootstrap_main_metrics.csv")
     audit = _load(resolve_under_root("outputs/data_audit", root) / "paper_dataset_summary.csv")
     trips = _load(resolve_under_root("outputs/data_audit", root) / "trip_characteristics.csv")
-    if not audit.empty and not trips.empty:
-        dist_col = next((c for c in ("distance_can_km", "distance_km", "s_can_km") if c in trips.columns), None)
-        if dist_col is not None:
-            audit = audit.copy()
-            audit["distance_can_km_mean"] = float(trips[dist_col].mean())
+    audit_dir = resolve_under_root("outputs/data_audit", root)
+    if not audit.empty:
+        audit = audit.copy()
+        if not trips.empty:
+            dist_col = next((c for c in ("distance_can_km", "distance_km", "s_can_km") if c in trips.columns), None)
+            if dist_col is not None:
+                audit["distance_can_km_mean"] = float(trips[dist_col].mean())
+            if "n_rows" in trips.columns:
+                audit["n_samples"] = int(trips["n_rows"].sum())
+        sampling = audit_dir / "sampling_intervals.csv"
+        if sampling.exists():
+            intervals = pd.read_csv(sampling)
+            if not intervals.empty:
+                audit["sampling_interval_s"] = float(intervals.iloc[:, 0].median())
     t1 = table01_dataset(audit)
     t1.to_csv(out / "table01_dataset.csv", index=False)
 

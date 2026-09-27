@@ -38,6 +38,13 @@ def _thousands(value: float) -> str:
     return f"{int(round(float(value))):,}"
 
 
+def _sampling_interval(seconds: float) -> str:
+    value = float(seconds)
+    if abs(value - round(value)) < 1e-6:
+        return f"{int(round(value))} s"
+    return f"{value:.2f} s"
+
+
 def write_paper_documents(
     out_dir: Path,
     t1: pd.DataFrame,
@@ -79,18 +86,21 @@ def _tables(
         "For the 10-page manuscript, paste Tables 1, 3, and 4, plus the PINN versus Data-Driven MLP row of Table 5.",
         "Table 2 is a short method comparison if space remains. Table 6 is optional and is not required in the main text.",
         "",
-        "### Table 1. HELECAR-D data used in this study",
+        "### Table 1. Characteristics of the HELECAR-D data used in this study",
         "",
         "| Characteristic | Value |",
         "|---|---|",
         f"| Analysed trips | {int(row['n_trips'])} |",
         f"| Trajectory distribution | T1: {int(row['n_T1'])}, T2: {int(row['n_T2'])}, T3: {int(row['n_T3'])} |",
+        f"| Total samples | {_thousands(row['n_samples'])} |",
+        f"| Approximate sampling interval | {_sampling_interval(row['sampling_interval_s'])} |",
         f"| Trip duration | {dur_lo}–{dur_hi} min |",
         f"| Trip distance | {_f2(row['distance_km_min'])}–{_f2(row['distance_km_max'])} km |",
         f"| Mean trip distance | {_f2(row['distance_km_mean'])} km |",
-        f"| Empirical SoC resolution | ~{_f2(row['empirical_soc_q_pp'])} percentage points |",
-        f"| Useful supervision windows | {_thousands(row['n_supervision_windows'])} |",
-        f"| Nominal usable battery capacity used in the model | {_f1(capacity_kwh)} kWh (modelling assumption, not a measured dataset field) |",
+        f"| Empirical SoC resolution | ≈ {_f2(row['empirical_soc_q_pp'])} percentage points |",
+        f"| Assumed usable battery capacity | {_f1(capacity_kwh)} kWh |",
+        "",
+        f"The usable battery capacity of {_f1(capacity_kwh)} kWh is a modelling assumption used by the energy model. It is not an independently measured usable-capacity value from this dataset.",
         "",
         "### Table 2. Comparison of evaluated energy-estimation approaches",
         "",
