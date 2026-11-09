@@ -61,6 +61,26 @@ MAIN_MODEL_FEATURES = (
     "speed_limit_mps",
 )
 
+
+def main_features_from_config(config: dict | None = None) -> tuple[str, ...]:
+    """Return the active main-feature tuple.
+
+    Paper HELECAR-D uses the eight-feature default. Review Tesla configs may
+    override ``features.main`` with a documented reduced common-feature set.
+    Missing features must not be invented as constants.
+    """
+    if not config:
+        return MAIN_MODEL_FEATURES
+    names = config.get("features", {}).get("main")
+    if not names:
+        return MAIN_MODEL_FEATURES
+    out = tuple(str(x) for x in names)
+    forbidden = set(EXCLUDED_MAIN_PREDICTORS) | set(SOC_LABEL_COLUMNS)
+    leaked = [n for n in out if n in forbidden or n.lower().startswith("soc")]
+    if leaked:
+        raise ValueError(f"Illegal main features (SoC/geo/time leakage): {leaked}")
+    return out
+
 # Causal trip-progress features for the PINN depletion head only.
 # Derived from telemetry from trip start through the current sample.
 PROGRESS_FEATURES = (

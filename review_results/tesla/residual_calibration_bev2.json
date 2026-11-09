@@ -1,0 +1,18 @@
+{
+  "vehicle": "BEV2",
+  "n_trips": 17,
+  "pool_file": "review_results/tesla/pools/bev2_pool.json",
+  "abs_err_p50_kw": 3.5961351218656916,
+  "abs_err_p95_kw": 23.84765804298538,
+  "abs_err_p99_kw": 46.78430662769853,
+  "grid_kw": [
+    10.0,
+    20.0,
+    40.0,
+    60.0,
+    80.0
+  ],
+  "chosen_residual_limit_kw": 40.0,
+  "rule": "smallest_grid_value_ge_train_pool_p95_|Pmeas-Pphysics|",
+  "note": "Measured power used only for bound calibration diagnostic; not a training target."
+}

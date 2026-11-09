@@ -1,0 +1,226 @@
+{
+  "git_sha": "0a85b57c3cad6d81a9dfb225f69445546860cc50",
+  "profile": "bev1_scarcity_n8_rep1",
+  "seed": 0,
+  "test_id": "BEV1_2025-01-31_drive1",
+  "train_ids": [
+    "BEV1_2024-11-26_drive2",
+    "BEV1_2024-09-06_drive1",
+    "BEV1_2025-01-27_drive1",
+    "BEV1_2024-10-24_drive1",
+    "BEV1_2025-01-19_drive1",
+    "BEV1_2025-01-20_drive2",
+    "BEV1_2024-12-08_drive4",
+    "BEV1_2024-10-31_drive4",
+    "BEV1_2025-02-04_drive1",
+    "BEV1_2025-02-13_drive2",
+    "BEV1_2025-02-15_drive5"
+  ],
+  "inner_train_ids": [
+    "BEV1_2024-11-26_drive2",
+    "BEV1_2024-09-06_drive1",
+    "BEV1_2025-01-27_drive1",
+    "BEV1_2024-10-24_drive1",
+    "BEV1_2025-01-19_drive1",
+    "BEV1_2025-01-20_drive2",
+    "BEV1_2024-10-31_drive4",
+    "BEV1_2025-02-04_drive1",
+    "BEV1_2025-02-13_drive2",
+    "BEV1_2025-02-15_drive5"
+  ],
+  "val_ids": [
+    "BEV1_2024-12-08_drive4"
+  ],
+  "q_inner_train": 0.05,
+  "q_outer_train": 0.05,
+  "q_test_posthoc": 0.05,
+  "q_test_posthoc_note": "Evaluation-only. Never used to control training, windows, or Smooth-L1 scale.",
+  "feature_list": [
+    "speed_mps",
+    "acc_mps2",
+    "theta_rad",
+    "temperature_c"
+  ],
+  "progress_features": [
+    "elapsed_s",
+    "cumulative_distance_km"
+  ],
+  "vehicle_parameters": {
+    "battery_capacity_kwh": 60.5,
+    "mass_kg": 1984.0,
+    "Crr": 0.01,
+    "cda_m2": 0.6,
+    "cd": null,
+    "frontal_area_m2": null,
+    "rho_air": 1.225,
+    "eta_drive": 0.9,
+    "eta_regen": 0.7,
+    "auxiliary_power_kw": 0.5,
+    "maximum_wheel_power_kw": 250.0,
+    "maximum_regen_wheel_power_kw": 80.0,
+    "g": 9.81
+  },
+  "window_settings": {
+    "soc_event_dsoc_pct": [
+      0.1,
+      0.2,
+      0.5
+    ],
+    "soc_event_min_duration_s": 60.0,
+    "fixed_time_s": [
+      60,
+      120,
+      300,
+      600
+    ],
+    "min_abs_dsoc_for_fixed_pct": 0.1,
+    "include_full_trip": true,
+    "train_overlap": true,
+    "eval_non_overlapping": true,
+    "huber_delta_mode": "quantization",
+    "huber_delta_kwh": null,
+    "event_start_stride": 30
+  },
+  "device": "cpu",
+  "python_version": "3.12.10",
+  "torch_version": "2.14.0+cpu",
+  "dataset_hashes": {
+    "BEV1_2025-01-31_drive1": "6ecf05b19b29002f707834b2c41e31f505d4d1ee58a258a2951ba7711fa56688",
+    "BEV1_2024-11-26_drive2": "2e793f7f10a739a8437f5a9148bafb7b86c7513038a4380e36d58c2d60dfad61",
+    "BEV1_2024-09-06_drive1": "2caed3aefaa2f38eaa01da527c2365cb0d29d579f6fb61c16ca36bc020adfdf0",
+    "BEV1_2025-01-27_drive1": "71fe9b62d729f17f8a4867b8ac7cae63592796710dc22473f895dadd49752fe9",
+    "BEV1_2024-10-24_drive1": "277fcf0ee772570e6df74c7ae4f6e9f3ac53c47af1c237205ef807b7cf32e890",
+    "BEV1_2025-01-19_drive1": "0ac4c69819fe50f9d87a307a3cc2edac3ac15368fd2631099393245f72201c6e",
+    "BEV1_2025-01-20_drive2": "e4c658aad2ec8b600ee8c021f5d89e48da6a600e83d030de5b24452666cb8cb3",
+    "BEV1_2024-12-08_drive4": "fac7c8810426ae8ff578438006360c1e5a584a9ad675a5d42d7ee8024f5e7823",
+    "BEV1_2024-10-31_drive4": "f583fb32d70f2737ae5696e5742292bca9187c8fb65c2dad201f6de96a6f29a1",
+    "BEV1_2025-02-04_drive1": "23b00bf0297e7b23977ca3d75f565ba4714766a805bf808548b7b6c7c22bfdcf",
+    "BEV1_2025-02-13_drive2": "668db6815706cb09f73afacb4783fd7bf0ac145ef1d72eca397cccf7d6867de1",
+    "BEV1_2025-02-15_drive5": "75de9881ecb09d33aa288acecab592689751bd09c7a998c72c15113b2d1b5a23"
+  },
+  "methods": {
+    "physics": {
+      "predicted_energy_kwh": 3.6508579895261
+    },
+    "ridge": {
+      "best_params": {
+        "alpha": 1.0,
+        "selection": "leave_one_trip_out_on_fit_rows_only"
+      },
+      "predicted_energy_kwh": 6.592266433844896,
+      "fitted_trip_ids": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-09-06_drive1",
+        "BEV1_2025-01-27_drive1",
+        "BEV1_2024-10-24_drive1",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-20_drive2",
+        "BEV1_2024-12-08_drive4",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-02-04_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ]
+    },
+    "weak_mlp": {
+      "selected_epoch": 165,
+      "final_retrain_epochs": 166,
+      "validation_score": 0.08105157129466534,
+      "validation_mae_by_scale": {
+        "soc_event_0.1": 0.06480161100625992,
+        "soc_event_0.2": 0.0690147802233696,
+        "soc_event_0.5": 0.06669379770755768,
+        "time_60s": 0.06368360668420792,
+        "time_120s": 0.08143044263124466,
+        "time_300s": 0.13187579810619354,
+        "time_600s": 0.15522268414497375,
+        "full_trip": 0.015689849853515625
+      },
+      "predicted_energy_kwh": 5.435418418910768,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 0.0,
+        "lambda_state": 0.0,
+        "lambda_boundary": 0.0,
+        "lambda_prior": 0.0
+      },
+      "scaler_trip_ids_inner": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-09-06_drive1",
+        "BEV1_2025-01-27_drive1",
+        "BEV1_2024-10-24_drive1",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-20_drive2",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-02-04_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "scaler_trip_ids_outer": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-09-06_drive1",
+        "BEV1_2025-01-27_drive1",
+        "BEV1_2024-10-24_drive1",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-20_drive2",
+        "BEV1_2024-12-08_drive4",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-02-04_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "cached": false
+    },
+    "pinn": {
+      "selected_epoch": 40,
+      "final_retrain_epochs": 41,
+      "validation_score": 0.07248476566746831,
+      "validation_mae_by_scale": {
+        "soc_event_0.1": 0.05672856420278549,
+        "soc_event_0.2": 0.058400802314281464,
+        "soc_event_0.5": 0.06166427955031395,
+        "time_60s": 0.058011651039123535,
+        "time_120s": 0.0776328593492508,
+        "time_300s": 0.12434866279363632,
+        "time_600s": 0.14130984246730804,
+        "full_trip": 0.001781463623046875
+      },
+      "predicted_energy_kwh": 5.125800743260317,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 1.0,
+        "lambda_state": 0.1,
+        "lambda_boundary": 0.0,
+        "lambda_prior": 0.1
+      },
+      "scaler_trip_ids_inner": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-09-06_drive1",
+        "BEV1_2025-01-27_drive1",
+        "BEV1_2024-10-24_drive1",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-20_drive2",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-02-04_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "scaler_trip_ids_outer": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-09-06_drive1",
+        "BEV1_2025-01-27_drive1",
+        "BEV1_2024-10-24_drive1",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-20_drive2",
+        "BEV1_2024-12-08_drive4",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-02-04_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "cached": false
+    }
+  }
+}

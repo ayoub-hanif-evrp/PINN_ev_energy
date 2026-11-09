@@ -1,0 +1,15 @@
+# Review-only residual-bound sensitivity. Predetermined values; not test-tuned.
+extends: configs/paper.yaml
+
+experiment:
+  profile: review_sens_residual
+  seeds: [0, 1, 2]
+  methods:
+    - pinn
+
+training:
+  # Original reference is 4.0 kW. Alternatives are predetermined around that value.
+  residual_limit_kw: 4.0
+
+paths:
+  loto_dir: outputs/review/sensitivity/residual_bound/loto

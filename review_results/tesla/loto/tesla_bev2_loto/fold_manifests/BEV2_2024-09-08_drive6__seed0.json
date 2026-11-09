@@ -1,0 +1,266 @@
+{
+  "git_sha": "0a85b57c3cad6d81a9dfb225f69445546860cc50",
+  "profile": "tesla_bev2_loto",
+  "seed": 0,
+  "test_id": "BEV2_2024-09-08_drive6",
+  "train_ids": [
+    "BEV2_2024-05-21_drive4",
+    "BEV2_2024-06-28_drive2",
+    "BEV2_2024-06-30_drive1",
+    "BEV2_2024-07-29_drive2",
+    "BEV2_2024-08-04_drive5",
+    "BEV2_2024-09-04_drive5",
+    "BEV2_2024-09-07_drive3",
+    "BEV2_2024-11-13_drive2",
+    "BEV2_2024-12-27_drive1",
+    "BEV2_2025-01-17_drive2",
+    "BEV2_2025-01-22_drive2",
+    "BEV2_2025-01-27_drive2",
+    "BEV2_2025-02-07_drive3",
+    "BEV2_2025-02-19_drive1",
+    "BEV2_2025-04-01_drive2",
+    "BEV2_2025-04-11_drive1"
+  ],
+  "inner_train_ids": [
+    "BEV2_2024-05-21_drive4",
+    "BEV2_2024-06-28_drive2",
+    "BEV2_2024-06-30_drive1",
+    "BEV2_2024-07-29_drive2",
+    "BEV2_2024-08-04_drive5",
+    "BEV2_2024-09-04_drive5",
+    "BEV2_2024-11-13_drive2",
+    "BEV2_2024-12-27_drive1",
+    "BEV2_2025-01-17_drive2",
+    "BEV2_2025-01-22_drive2",
+    "BEV2_2025-01-27_drive2",
+    "BEV2_2025-02-07_drive3",
+    "BEV2_2025-02-19_drive1",
+    "BEV2_2025-04-01_drive2",
+    "BEV2_2025-04-11_drive1"
+  ],
+  "val_ids": [
+    "BEV2_2024-09-07_drive3"
+  ],
+  "q_inner_train": 0.01,
+  "q_outer_train": 0.01,
+  "q_test_posthoc": 0.08,
+  "q_test_posthoc_note": "Evaluation-only. Never used to control training, windows, or Smooth-L1 scale.",
+  "feature_list": [
+    "speed_mps",
+    "acc_mps2",
+    "theta_rad",
+    "temperature_c"
+  ],
+  "progress_features": [
+    "elapsed_s",
+    "cumulative_distance_km"
+  ],
+  "vehicle_parameters": {
+    "battery_capacity_kwh": 78.8,
+    "mass_kg": 2054.0,
+    "Crr": 0.01,
+    "cda_m2": 0.6,
+    "cd": null,
+    "frontal_area_m2": null,
+    "rho_air": 1.225,
+    "eta_drive": 0.9,
+    "eta_regen": 0.7,
+    "auxiliary_power_kw": 0.5,
+    "maximum_wheel_power_kw": 250.0,
+    "maximum_regen_wheel_power_kw": 80.0,
+    "g": 9.81
+  },
+  "window_settings": {
+    "soc_event_dsoc_pct": [
+      0.1,
+      0.2,
+      0.5
+    ],
+    "soc_event_min_duration_s": 60.0,
+    "fixed_time_s": [
+      60,
+      120,
+      300,
+      600
+    ],
+    "min_abs_dsoc_for_fixed_pct": 0.1,
+    "include_full_trip": true,
+    "train_overlap": true,
+    "eval_non_overlapping": true,
+    "huber_delta_mode": "quantization",
+    "huber_delta_kwh": null,
+    "event_start_stride": 30
+  },
+  "device": "cpu",
+  "python_version": "3.12.10",
+  "torch_version": "2.14.0+cpu",
+  "dataset_hashes": {
+    "BEV2_2024-09-08_drive6": "da6474e238d3ab5e1c57adb28c143002e1c19365f7031cbc1502069bcfefa438",
+    "BEV2_2024-05-21_drive4": "b1b4ecae2509bb548b98d1c04fe6f533b8b332022725d3c4883afced4fedf6e9",
+    "BEV2_2024-06-28_drive2": "f68118f482fcbaf7b19874a7f6f772af209030c4d0b26b224b9a4b41987bb04e",
+    "BEV2_2024-06-30_drive1": "e9507db5ff392e868364585359ed8581939dcc4e23f4381a005a6f670920f6fe",
+    "BEV2_2024-07-29_drive2": "1cda2183659564287b97486e066dccd48d55a6b7079b573dbad03db2e5d54cba",
+    "BEV2_2024-08-04_drive5": "ce432591ab118987cbe7ba1a2f4fb1b1a6e948f6da084915a4aac369f7322f8d",
+    "BEV2_2024-09-04_drive5": "db0616115472dae5c8307c7ab1f0ae651e09c1e0b1df86327ecae8cb8d0a4ab5",
+    "BEV2_2024-09-07_drive3": "47a81640ee09b6fb401bfbf14899c29fa3e79209fcf0d5be041b122c8caa0624",
+    "BEV2_2024-11-13_drive2": "38cce840cecd4120cfbee84d2fbbb3c81e155dbeabfdb9b15905bfe8b21d38d2",
+    "BEV2_2024-12-27_drive1": "ded4329d1fe2f912dcab3700981b1a86cd777ec5a2fe96d02e1d81322a1ce4bb",
+    "BEV2_2025-01-17_drive2": "14afc6d8426e8ceb3b59c1412ac07c5af7134d3d0dfa733d8027459993d66395",
+    "BEV2_2025-01-22_drive2": "9f341f633e5ca3e9ba6f762eaa0afbd8a72c4994af7daf87ec348b3a175215d2",
+    "BEV2_2025-01-27_drive2": "b039ad4979c4592647e1933d7167a78e3d4d85c5defa42d2482c9720308036f1",
+    "BEV2_2025-02-07_drive3": "b36a249f261792576310368c3f0ff0aa55bf6f72d1df016a28fb7a5627d6c602",
+    "BEV2_2025-02-19_drive1": "63ef36b1779f96571a3ad24abc3333c44aa20ca126e56f81b27c66d4116ccbb1",
+    "BEV2_2025-04-01_drive2": "532b8548c08d19b8044cbd7884bf4ec7da9f6633f2994a278ddbd4fa1b6d035f",
+    "BEV2_2025-04-11_drive1": "aa8a4ea63a80ccd1773d99133006cb86a200220f83ce0b0812ec0cbd59a27a5d"
+  },
+  "methods": {
+    "physics": {
+      "predicted_energy_kwh": 13.984751879224778
+    },
+    "ridge": {
+      "best_params": {
+        "alpha": 1.0,
+        "selection": "leave_one_trip_out_on_fit_rows_only"
+      },
+      "predicted_energy_kwh": 12.782005032750854,
+      "fitted_trip_ids": [
+        "BEV2_2024-05-21_drive4",
+        "BEV2_2024-06-28_drive2",
+        "BEV2_2024-06-30_drive1",
+        "BEV2_2024-07-29_drive2",
+        "BEV2_2024-08-04_drive5",
+        "BEV2_2024-09-04_drive5",
+        "BEV2_2024-09-07_drive3",
+        "BEV2_2024-11-13_drive2",
+        "BEV2_2024-12-27_drive1",
+        "BEV2_2025-01-17_drive2",
+        "BEV2_2025-01-22_drive2",
+        "BEV2_2025-01-27_drive2",
+        "BEV2_2025-02-07_drive3",
+        "BEV2_2025-02-19_drive1",
+        "BEV2_2025-04-01_drive2",
+        "BEV2_2025-04-11_drive1"
+      ]
+    },
+    "weak_mlp": {
+      "selected_epoch": 73,
+      "final_retrain_epochs": 74,
+      "validation_score": 0.1314765177667141,
+      "validation_mae_by_scale": {
+        "soc_event_0.1": 0.08736627548933029,
+        "soc_event_0.2": 0.10993243008852005,
+        "soc_event_0.5": 0.13339735567569733,
+        "time_60s": 0.08371411263942719,
+        "time_120s": 0.1278897076845169,
+        "time_300s": 0.15423418581485748,
+        "time_600s": 0.299685537815094,
+        "full_trip": 0.05559253692626953
+      },
+      "predicted_energy_kwh": 14.267164038154812,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 0.0,
+        "lambda_state": 0.0,
+        "lambda_boundary": 0.0,
+        "lambda_prior": 0.0
+      },
+      "scaler_trip_ids_inner": [
+        "BEV2_2024-05-21_drive4",
+        "BEV2_2024-06-28_drive2",
+        "BEV2_2024-06-30_drive1",
+        "BEV2_2024-07-29_drive2",
+        "BEV2_2024-08-04_drive5",
+        "BEV2_2024-09-04_drive5",
+        "BEV2_2024-11-13_drive2",
+        "BEV2_2024-12-27_drive1",
+        "BEV2_2025-01-17_drive2",
+        "BEV2_2025-01-22_drive2",
+        "BEV2_2025-01-27_drive2",
+        "BEV2_2025-02-07_drive3",
+        "BEV2_2025-02-19_drive1",
+        "BEV2_2025-04-01_drive2",
+        "BEV2_2025-04-11_drive1"
+      ],
+      "scaler_trip_ids_outer": [
+        "BEV2_2024-05-21_drive4",
+        "BEV2_2024-06-28_drive2",
+        "BEV2_2024-06-30_drive1",
+        "BEV2_2024-07-29_drive2",
+        "BEV2_2024-08-04_drive5",
+        "BEV2_2024-09-04_drive5",
+        "BEV2_2024-09-07_drive3",
+        "BEV2_2024-11-13_drive2",
+        "BEV2_2024-12-27_drive1",
+        "BEV2_2025-01-17_drive2",
+        "BEV2_2025-01-22_drive2",
+        "BEV2_2025-01-27_drive2",
+        "BEV2_2025-02-07_drive3",
+        "BEV2_2025-02-19_drive1",
+        "BEV2_2025-04-01_drive2",
+        "BEV2_2025-04-11_drive1"
+      ],
+      "cached": false
+    },
+    "pinn": {
+      "selected_epoch": 366,
+      "final_retrain_epochs": 367,
+      "validation_score": 0.09295856021344662,
+      "validation_mae_by_scale": {
+        "soc_event_0.1": 0.07010238617658615,
+        "soc_event_0.2": 0.08793682605028152,
+        "soc_event_0.5": 0.09548734873533249,
+        "time_60s": 0.06544815003871918,
+        "time_120s": 0.10104592144489288,
+        "time_300s": 0.11245622485876083,
+        "time_600s": 0.19903609156608582,
+        "full_trip": 0.012155532836914062
+      },
+      "predicted_energy_kwh": 11.392015346007732,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 1.0,
+        "lambda_state": 0.1,
+        "lambda_boundary": 0.0,
+        "lambda_prior": 0.1
+      },
+      "scaler_trip_ids_inner": [
+        "BEV2_2024-05-21_drive4",
+        "BEV2_2024-06-28_drive2",
+        "BEV2_2024-06-30_drive1",
+        "BEV2_2024-07-29_drive2",
+        "BEV2_2024-08-04_drive5",
+        "BEV2_2024-09-04_drive5",
+        "BEV2_2024-11-13_drive2",
+        "BEV2_2024-12-27_drive1",
+        "BEV2_2025-01-17_drive2",
+        "BEV2_2025-01-22_drive2",
+        "BEV2_2025-01-27_drive2",
+        "BEV2_2025-02-07_drive3",
+        "BEV2_2025-02-19_drive1",
+        "BEV2_2025-04-01_drive2",
+        "BEV2_2025-04-11_drive1"
+      ],
+      "scaler_trip_ids_outer": [
+        "BEV2_2024-05-21_drive4",
+        "BEV2_2024-06-28_drive2",
+        "BEV2_2024-06-30_drive1",
+        "BEV2_2024-07-29_drive2",
+        "BEV2_2024-08-04_drive5",
+        "BEV2_2024-09-04_drive5",
+        "BEV2_2024-09-07_drive3",
+        "BEV2_2024-11-13_drive2",
+        "BEV2_2024-12-27_drive1",
+        "BEV2_2025-01-17_drive2",
+        "BEV2_2025-01-22_drive2",
+        "BEV2_2025-01-27_drive2",
+        "BEV2_2025-02-07_drive3",
+        "BEV2_2025-02-19_drive1",
+        "BEV2_2025-04-01_drive2",
+        "BEV2_2025-04-11_drive1"
+      ],
+      "cached": false
+    }
+  }
+}

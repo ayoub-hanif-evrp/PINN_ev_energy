@@ -1,0 +1,70 @@
+{
+  "timestamp_utc": "2026-11-09T20:25:08.918035+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "git_commit": "0a85b57c3cad6d81a9dfb225f69445546860cc50",
+  "software_versions": {
+    "python": "3.12.10",
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scipy": "1.18.1",
+    "pyyaml": "6.0.3",
+    "matplotlib": "3.11.2",
+    "pyarrow": "25.0.1",
+    "scikit-learn": "1.9.1",
+    "torch": "2.14.0+cpu"
+  },
+  "stage": "loto",
+  "profile": "tesla_bev1_loto",
+  "seeds": [
+    0
+  ],
+  "methods": [
+    "physics",
+    "ridge",
+    "weak_mlp",
+    "pinn"
+  ],
+  "n_trips": 17,
+  "trip_ids": [
+    "BEV1_2024-07-25_drive2",
+    "BEV1_2024-08-11_drive2",
+    "BEV1_2024-09-01_drive3",
+    "BEV1_2024-09-04_drive1",
+    "BEV1_2024-09-06_drive1",
+    "BEV1_2024-10-24_drive1",
+    "BEV1_2024-10-31_drive4",
+    "BEV1_2024-11-26_drive2",
+    "BEV1_2024-12-03_drive4",
+    "BEV1_2024-12-08_drive4",
+    "BEV1_2025-01-19_drive1",
+    "BEV1_2025-01-20_drive2",
+    "BEV1_2025-01-27_drive1",
+    "BEV1_2025-01-31_drive1",
+    "BEV1_2025-02-04_drive1",
+    "BEV1_2025-02-13_drive2",
+    "BEV1_2025-02-15_drive5"
+  ],
+  "test_ids_filter": [
+    "BEV1_2024-07-25_drive2",
+    "BEV1_2024-08-11_drive2",
+    "BEV1_2024-09-01_drive3",
+    "BEV1_2024-09-04_drive1",
+    "BEV1_2024-09-06_drive1",
+    "BEV1_2024-10-24_drive1",
+    "BEV1_2024-10-31_drive4",
+    "BEV1_2024-11-26_drive2",
+    "BEV1_2024-12-03_drive4",
+    "BEV1_2024-12-08_drive4",
+    "BEV1_2025-01-19_drive1",
+    "BEV1_2025-01-20_drive2",
+    "BEV1_2025-01-27_drive1",
+    "BEV1_2025-01-31_drive1",
+    "BEV1_2025-02-04_drive1",
+    "BEV1_2025-02-13_drive2",
+    "BEV1_2025-02-15_drive5"
+  ],
+  "device": "cpu",
+  "retrain_outer": true,
+  "n_failures": 0,
+  "note": "Smoke/quick metrics are pipeline diagnostics, not paper results."
+}

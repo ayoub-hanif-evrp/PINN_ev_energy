@@ -1,0 +1,4 @@
+method_a,method_b,difference,n_trips,wilcoxon_stat,p_value,note
+pinn,weak_mlp,absolute_error_a - absolute_error_b,17,63.0,0.54766845703125,Secondary evidence only. Not the primary inference procedure.
+pinn,ridge,absolute_error_a - absolute_error_b,17,54.0,0.3060455322265625,Secondary evidence only. Not the primary inference procedure.
+pinn,physics,absolute_error_a - absolute_error_b,17,49.0,0.2068939208984375,Secondary evidence only. Not the primary inference procedure.

@@ -123,16 +123,34 @@ def is_soc_derived_column(name: str) -> bool:
     return key.startswith("soc") or "dsoc" in key or key.endswith("_soc")
 
 
-def ridge_feature_matrix(table: pd.DataFrame) -> pd.DataFrame:
+def ridge_features_from_config(config: dict | None = None) -> tuple[str, ...]:
+    """Return Ridge predictor whitelist (paper default or review override)."""
+    if not config:
+        return RIDGE_FEATURES
+    names = config.get("features", {}).get("ridge")
+    if not names:
+        return RIDGE_FEATURES
+    out = tuple(str(x) for x in names)
+    forbidden = [n for n in out if is_soc_derived_column(n)]
+    if forbidden:
+        raise ValueError(f"Illegal Ridge features (SoC leakage): {forbidden}")
+    unknown = [n for n in out if n not in RIDGE_FEATURES]
+    if unknown:
+        raise ValueError(f"Ridge features must be a subset of RIDGE_FEATURES; unknown: {unknown}")
+    return out
+
+
+def ridge_feature_matrix(table: pd.DataFrame, feature_names: tuple[str, ...] | list[str] | None = None) -> pd.DataFrame:
     """Whitelist-only design matrix. Raises if any SoC-derived column is requested."""
-    available = [c for c in RIDGE_FEATURES if c in table.columns]
+    cols = tuple(feature_names) if feature_names is not None else RIDGE_FEATURES
+    available = [c for c in cols if c in table.columns]
     forbidden = [c for c in available if is_soc_derived_column(c)]
     if forbidden:
         raise ValueError(f"Ridge features must not include SoC-derived columns: {forbidden}")
-    missing = [c for c in RIDGE_FEATURES if c not in table.columns]
+    missing = [c for c in cols if c not in table.columns]
     if missing:
         raise KeyError(f"Ridge whitelist missing columns: {missing}")
-    x = table.loc[:, list(RIDGE_FEATURES)].copy()
+    x = table.loc[:, list(cols)].copy()
     leaked_in_x = [c for c in x.columns if is_soc_derived_column(str(c))]
     if leaked_in_x:
         raise ValueError(f"Leakage: SoC-derived columns in Ridge X: {leaked_in_x}")

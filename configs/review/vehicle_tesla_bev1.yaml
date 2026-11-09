@@ -1,0 +1,40 @@
+# Tesla Model Y Standard Range (BEV1) — REVIEW ONLY
+# Sources: Yasko et al. Scientific Data 2025 Table 3; public Model Y SR certification masses.
+# Values tagged "assumption" are NOT measured on the KU Leuven fleet.
+
+battery_capacity_kwh: 60.5
+# Provenance: dataset paper Table 3 nominal capacity (LFP). V×I–SoC audit implies ~56 kWh
+# effective usable on sampled drives. Nominal is used for SoC-derived targets as the
+# documented dataset capacity; usable uncertainty is reported separately.
+
+mass_kg: 1984.0
+# Provenance: Model Y SR tare ~1909 kg + assumed 75 kg occupant. ASSUMPTION.
+
+Crr: 0.010
+# Provenance: typical EV tyre rolling-resistance coefficient. ASSUMPTION.
+
+cda_m2: 0.60
+# Provenance: order-of-magnitude Model Y CdA (~0.23 * ~2.6 m²). ASSUMPTION.
+
+rho_air: 1.225
+# ISA sea-level density. ASSUMPTION.
+
+eta_drive: 0.90
+# Typical BEV drivetrain efficiency. ASSUMPTION (not a Tesla efficiency map).
+
+eta_regen: 0.70
+# Regenerative recovery fraction at battery. ASSUMPTION.
+
+auxiliary_power_kw: 0.5
+# Constant auxiliary electrical load placeholder. ASSUMPTION.
+# HVAC in this dataset is large and time-varying; a constant aux is a limitation.
+
+# Battery-side peak power is far above Twizy; these are soft wheel-power bounds
+# used only when physics.apply_power_bounds is true (default false).
+maximum_wheel_power_kw: 250.0
+# ASSUMPTION: order-of-magnitude Model Y propulsion capability (not used when bounds off).
+
+maximum_regen_wheel_power_kw: 80.0
+# ASSUMPTION: regen wheel-power magnitude bound (not used when bounds off).
+
+g: 9.81

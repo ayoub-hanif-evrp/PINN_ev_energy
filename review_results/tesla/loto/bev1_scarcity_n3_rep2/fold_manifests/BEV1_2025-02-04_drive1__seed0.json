@@ -1,0 +1,186 @@
+{
+  "git_sha": "0a85b57c3cad6d81a9dfb225f69445546860cc50",
+  "profile": "bev1_scarcity_n3_rep2",
+  "seed": 0,
+  "test_id": "BEV1_2025-02-04_drive1",
+  "train_ids": [
+    "BEV1_2024-11-26_drive2",
+    "BEV1_2024-10-31_drive4",
+    "BEV1_2025-01-19_drive1",
+    "BEV1_2025-01-31_drive1",
+    "BEV1_2025-02-13_drive2",
+    "BEV1_2025-02-15_drive5"
+  ],
+  "inner_train_ids": [
+    "BEV1_2024-10-31_drive4",
+    "BEV1_2025-01-19_drive1",
+    "BEV1_2025-01-31_drive1",
+    "BEV1_2025-02-13_drive2",
+    "BEV1_2025-02-15_drive5"
+  ],
+  "val_ids": [
+    "BEV1_2024-11-26_drive2"
+  ],
+  "q_inner_train": 0.06,
+  "q_outer_train": 0.05,
+  "q_test_posthoc": 0.03,
+  "q_test_posthoc_note": "Evaluation-only. Never used to control training, windows, or Smooth-L1 scale.",
+  "feature_list": [
+    "speed_mps",
+    "acc_mps2",
+    "theta_rad",
+    "temperature_c"
+  ],
+  "progress_features": [
+    "elapsed_s",
+    "cumulative_distance_km"
+  ],
+  "vehicle_parameters": {
+    "battery_capacity_kwh": 60.5,
+    "mass_kg": 1984.0,
+    "Crr": 0.01,
+    "cda_m2": 0.6,
+    "cd": null,
+    "frontal_area_m2": null,
+    "rho_air": 1.225,
+    "eta_drive": 0.9,
+    "eta_regen": 0.7,
+    "auxiliary_power_kw": 0.5,
+    "maximum_wheel_power_kw": 250.0,
+    "maximum_regen_wheel_power_kw": 80.0,
+    "g": 9.81
+  },
+  "window_settings": {
+    "soc_event_dsoc_pct": [
+      0.1,
+      0.2,
+      0.5
+    ],
+    "soc_event_min_duration_s": 60.0,
+    "fixed_time_s": [
+      60,
+      120,
+      300,
+      600
+    ],
+    "min_abs_dsoc_for_fixed_pct": 0.1,
+    "include_full_trip": true,
+    "train_overlap": true,
+    "eval_non_overlapping": true,
+    "huber_delta_mode": "quantization",
+    "huber_delta_kwh": null,
+    "event_start_stride": 30
+  },
+  "device": "cpu",
+  "python_version": "3.12.10",
+  "torch_version": "2.14.0+cpu",
+  "dataset_hashes": {
+    "BEV1_2025-02-04_drive1": "23b00bf0297e7b23977ca3d75f565ba4714766a805bf808548b7b6c7c22bfdcf",
+    "BEV1_2024-11-26_drive2": "2e793f7f10a739a8437f5a9148bafb7b86c7513038a4380e36d58c2d60dfad61",
+    "BEV1_2024-10-31_drive4": "f583fb32d70f2737ae5696e5742292bca9187c8fb65c2dad201f6de96a6f29a1",
+    "BEV1_2025-01-19_drive1": "0ac4c69819fe50f9d87a307a3cc2edac3ac15368fd2631099393245f72201c6e",
+    "BEV1_2025-01-31_drive1": "6ecf05b19b29002f707834b2c41e31f505d4d1ee58a258a2951ba7711fa56688",
+    "BEV1_2025-02-13_drive2": "668db6815706cb09f73afacb4783fd7bf0ac145ef1d72eca397cccf7d6867de1",
+    "BEV1_2025-02-15_drive5": "75de9881ecb09d33aa288acecab592689751bd09c7a998c72c15113b2d1b5a23"
+  },
+  "methods": {
+    "physics": {
+      "predicted_energy_kwh": 3.119987995787729
+    },
+    "ridge": {
+      "best_params": {
+        "alpha": 10.0,
+        "selection": "leave_one_trip_out_on_fit_rows_only"
+      },
+      "predicted_energy_kwh": 5.086173865512125,
+      "fitted_trip_ids": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-31_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ]
+    },
+    "weak_mlp": {
+      "selected_epoch": 157,
+      "final_retrain_epochs": 158,
+      "validation_score": 0.04965708823874593,
+      "validation_mae_by_scale": {
+        "soc_event_0.1": 0.05576009303331375,
+        "soc_event_0.2": 0.06482252478599548,
+        "soc_event_0.5": 0.06712417304515839,
+        "time_60s": 0.0558769553899765,
+        "time_120s": 0.05942123383283615,
+        "time_300s": 0.059568140655756,
+        "time_600s": 0.033045172691345215,
+        "full_trip": 0.0016384124755859375
+      },
+      "predicted_energy_kwh": 4.019398461712731,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 0.0,
+        "lambda_state": 0.0,
+        "lambda_boundary": 0.0,
+        "lambda_prior": 0.0
+      },
+      "scaler_trip_ids_inner": [
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-31_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "scaler_trip_ids_outer": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-31_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "cached": false
+    },
+    "pinn": {
+      "selected_epoch": 233,
+      "final_retrain_epochs": 234,
+      "validation_score": 0.04030533181503415,
+      "validation_mae_by_scale": {
+        "soc_event_0.1": 0.043750789016485214,
+        "soc_event_0.2": 0.04515950381755829,
+        "soc_event_0.5": 0.04943472146987915,
+        "time_60s": 0.03917236626148224,
+        "time_120s": 0.03957792744040489,
+        "time_300s": 0.06805097311735153,
+        "time_600s": 0.03494461253285408,
+        "full_trip": 0.0023517608642578125
+      },
+      "predicted_energy_kwh": 4.182974612961213,
+      "saturation_frac": 0.0,
+      "lambdas": {
+        "lambda_window": 1.0,
+        "lambda_dynamics": 1.0,
+        "lambda_state": 0.1,
+        "lambda_boundary": 0.0,
+        "lambda_prior": 0.1
+      },
+      "scaler_trip_ids_inner": [
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-31_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "scaler_trip_ids_outer": [
+        "BEV1_2024-11-26_drive2",
+        "BEV1_2024-10-31_drive4",
+        "BEV1_2025-01-19_drive1",
+        "BEV1_2025-01-31_drive1",
+        "BEV1_2025-02-13_drive2",
+        "BEV1_2025-02-15_drive5"
+      ],
+      "cached": false
+    }
+  }
+}

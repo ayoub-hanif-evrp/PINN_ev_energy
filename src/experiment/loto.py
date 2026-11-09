@@ -21,7 +21,7 @@ from data.features import trip_level_feature_table
 from data.preprocessing import ProcessedTrip
 from data.quantization import q_from_trips
 from data.scaling import ProgressScaler, TripStandardScaler
-from data.schema import MAIN_MODEL_FEATURES, PROGRESS_FEATURES
+from data.schema import MAIN_MODEL_FEATURES, PROGRESS_FEATURES, main_features_from_config
 from data.windows import generate_windows
 from evaluation.metrics import reconstruct_soc, soc_reconstruction_metrics, summarize_energy_table, trip_energy_row
 from evaluation.window_eval import nonoverlapping_window_metrics
@@ -47,7 +47,14 @@ from training.trainer import (
 )
 from units import energy_kwh_from_power
 
-NEURAL_METHODS = ("weak_mlp", "pinn")
+NEURAL_METHODS = (
+    "weak_mlp",
+    "pinn",
+    "pinn_fulltrip",
+    "pinn_no_dynamics",
+    "pinn_no_state",
+    "pinn_no_prior",
+)
 
 
 def _print(msg: str) -> None:
@@ -161,6 +168,7 @@ def run_loto(
     seeds: list[int] | None = None,
     test_ids: list[str] | None = None,
     output_subdir: str | None = None,
+    trips: list[ProcessedTrip] | None = None,
 ) -> pd.DataFrame:
     root = project_root()
     profile = str(config.get("experiment", {}).get("profile", "base"))
@@ -187,8 +195,10 @@ def run_loto(
     use_cache = bool(config.get("experiment", {}).get("cache", True))
 
     _print(f"=== LOTO profile={profile} seeds={seeds} methods={methods} device={device} ===")
-    trips = load_processed(config)
-    feat_table = feature_distribution_table(trips)
+    if trips is None:
+        trips = load_processed(config)
+    feature_names = main_features_from_config(config)
+    feat_table = feature_distribution_table(trips, columns=feature_names + PROGRESS_FEATURES)
     feat_table.to_csv(out_dir / "feature_distributions.csv", index=False)
     assert_feature_units_and_coverage(feat_table)
     params = load_vehicle_parameters(config=config)
@@ -243,7 +253,7 @@ def run_loto(
                 "q_outer_train": q_outer,
                 "q_test_posthoc": q_test_posthoc,
                 "q_test_posthoc_note": "Evaluation-only. Never used to control training, windows, or Smooth-L1 scale.",
-                "feature_list": list(MAIN_MODEL_FEATURES),
+                "feature_list": list(main_features_from_config(config)),
                 "progress_features": list(PROGRESS_FEATURES),
                 "vehicle_parameters": params.as_dict(),
                 "window_settings": config.get("windows", {}),
@@ -269,9 +279,11 @@ def run_loto(
                 fold_info["methods"]["physics"] = {"predicted_energy_kwh": phys["energy_kwh"]}
 
             if "ridge" in methods:
+                from data.features import ridge_features_from_config
+
                 train_table = trip_level_feature_table(outer_train, battery_capacity_kwh=params.battery_capacity_kwh)
                 test_table = trip_level_feature_table([test], battery_capacity_kwh=params.battery_capacity_kwh)
-                ridge = TripRidge().fit(train_table)
+                ridge = TripRidge(feature_names=ridge_features_from_config(config)).fit(train_table)
                 ridge.assert_not_fitted_on(test.trip_id)
                 pred_e = float(ridge.predict(test_table)[0])
                 rows.append(trip_energy_row(test.trip_id, test.trajectory, "ridge", seed, obs["distance_km"], obs["duration_s"], obs["e_obs_kwh"], pred_e))
@@ -496,7 +508,7 @@ def _run_neural_fold(
         val_ids=list(fold.val_ids),
         q_inner=q_inner,
         q_outer=q_outer,
-        feature_list=list(MAIN_MODEL_FEATURES),
+        feature_list=list(main_features_from_config(config)),
         progress_features=list(PROGRESS_FEATURES),
         physics=config.get("physics", {}),
         windows=config.get("windows", {}),
@@ -530,7 +542,8 @@ def _run_neural_fold(
     include_state = uses_state(kind)
     sel_trips = inner_train if inner_train else outer_train
     q_sel = q_inner if inner_train else q_outer
-    x_scaler_inner = TripStandardScaler().fit(sel_trips)
+    feature_names = main_features_from_config(config)
+    x_scaler_inner = TripStandardScaler(columns=feature_names).fit(sel_trips)
     p_scaler_inner = ProgressScaler().fit(sel_trips)
     x_scaler_inner.assert_not_fitted_on(test.trip_id)
     p_scaler_inner.assert_not_fitted_on(test.trip_id)
@@ -582,6 +595,7 @@ def _run_neural_fold(
         q_sel,
         seed,
         early_stopping=True,
+        method=method,
     )
     hist_sel = pd.DataFrame(selected["history"])
     (out_dir / "training_histories").mkdir(parents=True, exist_ok=True)
@@ -598,7 +612,7 @@ def _run_neural_fold(
     }
 
     if retrain_outer:
-        x_scaler = TripStandardScaler().fit(outer_train)
+        x_scaler = TripStandardScaler(columns=feature_names).fit(outer_train)
         p_scaler = ProgressScaler().fit(outer_train)
         x_scaler.assert_not_fitted_on(test.trip_id)
         p_scaler.assert_not_fitted_on(test.trip_id)
@@ -629,6 +643,7 @@ def _run_neural_fold(
             seed,
             max_epochs=retrain_epochs,
             early_stopping=False,
+            method=method,
         )
         model = retrained["model"]
         lambdas = retrained["lambdas"]

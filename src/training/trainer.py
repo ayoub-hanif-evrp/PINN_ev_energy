@@ -16,7 +16,13 @@ import torch
 from torch import nn
 
 from data.preprocessing import ProcessedTrip
-from data.schema import EXCLUDED_MAIN_PREDICTORS, MAIN_MODEL_FEATURES, PROGRESS_FEATURES, SOC_LABEL_COLUMNS
+from data.schema import (
+    EXCLUDED_MAIN_PREDICTORS,
+    MAIN_MODEL_FEATURES,
+    PROGRESS_FEATURES,
+    SOC_LABEL_COLUMNS,
+    main_features_from_config,
+)
 from data.windows import EnergyWindow, huber_delta_kwh
 from models.pinn import PINN
 from models.weak_mlp import WeakMLP
@@ -29,6 +35,15 @@ from training.torch_ops import torch_energy_prefix, torch_window_energy
 NeuralKind = Literal["mlp", "pinn"]
 NEURAL_KINDS = ("mlp", "pinn")
 
+# Review-only ablation method ids. Paper methods remain weak_mlp / pinn.
+PINN_ABLATION_METHODS = {
+    "pinn",
+    "pinn_fulltrip",
+    "pinn_no_dynamics",
+    "pinn_no_state",
+    "pinn_no_prior",
+}
+
 
 def _assert_features_safe(names: tuple[str, ...] | list[str]) -> None:
     forbidden = set(EXCLUDED_MAIN_PREDICTORS) | set(SOC_LABEL_COLUMNS)
@@ -40,7 +55,7 @@ def _assert_features_safe(names: tuple[str, ...] | list[str]) -> None:
 def method_kind(method: str) -> NeuralKind:
     if method in {"weak_mlp", "mlp"}:
         return "mlp"
-    if method == "pinn":
+    if method in PINN_ABLATION_METHODS:
         return "pinn"
     raise ValueError(f"Unknown neural method {method}")
 
@@ -58,6 +73,9 @@ def uses_state(kind: str) -> bool:
 
 
 def window_scale_filter(method: str) -> set[str] | None:
+    """Restrict supervision windows for review ablations. Paper `pinn` is unchanged."""
+    if method == "pinn_fulltrip":
+        return {"full_trip"}
     return None
 
 
@@ -195,7 +213,12 @@ def make_inference_batch(
     )
 
 
-def _lambdas(config: dict[str, Any], kind: str, lambda_prior: float | None = None) -> dict[str, float]:
+def _lambdas(
+    config: dict[str, Any],
+    kind: str,
+    lambda_prior: float | None = None,
+    method: str | None = None,
+) -> dict[str, float]:
     tr = config.get("training", {})
     lam = {
         "lambda_window": float(tr.get("lambda_window", tr.get("lambda_energy", 1.0))),
@@ -209,6 +232,13 @@ def _lambdas(config: dict[str, Any], kind: str, lambda_prior: float | None = Non
         lam["lambda_state"] = 0.0
         lam["lambda_prior"] = 0.0
         lam["lambda_boundary"] = 0.0
+    # Review ablations: zero one physics-informed term at a time.
+    if method == "pinn_no_dynamics":
+        lam["lambda_dynamics"] = 0.0
+    if method == "pinn_no_state":
+        lam["lambda_state"] = 0.0
+    if method == "pinn_no_prior":
+        lam["lambda_prior"] = 0.0
     return lam
 
 
@@ -226,16 +256,19 @@ def _huber_window(config: dict[str, Any], q: float, battery_capacity_kwh: float)
 def build_model(kind: str, config: dict[str, Any], seed: int) -> nn.Module:
     tr = config.get("training", {})
     hidden = tuple(int(x) for x in tr.get("hidden_layers", [64, 64, 64]))
+    in_dim = len(main_features_from_config(config))
     torch.manual_seed(int(seed))
     np.random.seed(int(seed))
     if kind == "mlp":
         return WeakMLP(
+            in_dim=in_dim,
             hidden_layers=hidden,
             activation=str(tr.get("activation", "tanh")),
             power_center_kw=float(tr.get("mlp_power_center_kw", 5.0)),
             power_half_range_kw=float(tr.get("mlp_power_half_range_kw", 30.0)),
         )
     return PINN(
+        in_dim=in_dim,
         hidden_layers=hidden,
         activation=str(tr.get("activation", "tanh")),
         residual_limit_kw=float(tr.get("residual_limit_kw", 4.0)),
@@ -326,6 +359,7 @@ def train_neural_model(
     lambda_prior: float | None = None,
     max_epochs: int | None = None,
     early_stopping: bool = True,
+    method: str | None = None,
 ) -> dict[str, Any]:
     for b in train_batches:
         b.assert_no_soc_input()
@@ -339,7 +373,7 @@ def train_neural_model(
         weight_decay=float(tr.get("weight_decay", 1e-5)),
     )
     stopper = EarlyStopping(patience=int(tr.get("early_stopping_patience", 40)))
-    lambdas = _lambdas(config, kind, lambda_prior)
+    lambdas = _lambdas(config, kind, lambda_prior, method=method)
     h_win = _huber_window(config, q, battery_capacity_kwh)
     h_state = float(tr.get("huber_state_delta_pp", 0.1))
     p_scale = float(tr.get("p_scale_kw", config.get("physics", {}).get("p_scale_kw", 5.0)))

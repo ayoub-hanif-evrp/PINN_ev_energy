@@ -26,14 +26,19 @@ class TripRidge:
     to ``fit`` only. The outer held-out trip must not be in that table.
     """
 
-    def __init__(self, alphas: tuple[float, ...] | list[float] = RIDGE_ALPHAS):
+    def __init__(
+        self,
+        alphas: tuple[float, ...] | list[float] = RIDGE_ALPHAS,
+        feature_names: tuple[str, ...] | list[str] | None = None,
+    ):
         self.alphas = [float(a) for a in alphas]
+        self.feature_names = tuple(feature_names) if feature_names is not None else RIDGE_FEATURES
         self.model_: Pipeline | None = None
         self.best_params_: dict[str, Any] | None = None
         self.fitted_trip_ids: list[str] = []
 
     def fit(self, table: pd.DataFrame) -> "TripRidge":
-        x = ridge_feature_matrix(table)
+        x = ridge_feature_matrix(table, feature_names=self.feature_names)
         assert_no_soc_in_predictors(list(x.columns))
         y = ridge_target(table, "e_obs_kwh")
         if "trip_id" in table.columns:
@@ -68,12 +73,13 @@ class TripRidge:
     def predict(self, table: pd.DataFrame) -> np.ndarray:
         if self.model_ is None:
             raise RuntimeError("TripRidge has not been fit.")
-        x = ridge_feature_matrix(table)
+        x = ridge_feature_matrix(table, feature_names=self.feature_names)
         assert_no_soc_in_predictors(list(x.columns))
+        allowed = set(self.feature_names)
         leaked = [
             c
             for c in x.columns
-            if c in {"soc_start", "soc_end", "soc_delta", "e_obs_kwh"} or str(c) not in RIDGE_FEATURES
+            if c in {"soc_start", "soc_end", "soc_delta", "e_obs_kwh"} or str(c) not in allowed
         ]
         if leaked:
             raise AssertionError(f"Ridge inference leakage: {leaked}")

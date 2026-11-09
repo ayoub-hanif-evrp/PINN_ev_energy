@@ -1,0 +1,4 @@
+method_a,method_b,difference,sign_note,mean,ci_low,ci_high,n,n_trips
+pinn,weak_mlp,AE(a) - AE(b),negative => a has lower absolute error,0.09160448785633193,-0.14050419448218013,0.34375520162159073,17.0,17.0
+pinn,ridge,AE(a) - AE(b),negative => a has lower absolute error,-1.0533773918220692,-2.360436397332432,-0.18871274386603132,17.0,17.0
+pinn,physics,AE(a) - AE(b),negative => a has lower absolute error,-0.5883959407756583,-1.2796197617322929,-0.01197704603516612,17.0,17.0

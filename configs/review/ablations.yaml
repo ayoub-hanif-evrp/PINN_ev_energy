@@ -1,0 +1,18 @@
+# Review-only ablation profile. Does NOT replace configs/paper.yaml.
+extends: configs/paper.yaml
+
+experiment:
+  profile: review_ablations
+  seed: 0
+  seeds: [0, 1, 2]
+  # Only variants missing from the original leave-one-trip-out cache.
+  # Cached physics / pinn / pinn_fulltrip / pinn_no_dynamics remain the scientific reference.
+  methods:
+    - pinn_no_state
+    - pinn_no_prior
+
+paths:
+  loto_dir: outputs/review/ablations/loto
+  ablation_dir: outputs/review/ablations
+  figures_dir: outputs/review/ablations/figures
+  tables_dir: outputs/review/ablations/tables

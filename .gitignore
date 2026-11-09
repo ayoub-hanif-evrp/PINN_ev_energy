@@ -31,3 +31,20 @@ outputs/
 
 # Local HELECAR-D download (CC-BY-4.0). Do not commit the dataset.
 /HELECAR-D/
+
+# Local KU Leuven BEV energy dynamics dataset (CC BY 4.0). Do not commit.
+/BEV energy dynamics dataset/
+/data/tesla/
+/data/bmw_i3/
+
+# Review experiment heavy artifacts (checkpoints/cache); keep lightweight CSVs/notes.
+/review_results/**/checkpoints/
+/review_results/**/cache/
+/review_results/**/training_histories/
+/review_results/**/soc_reconstruction/
+/review_results/**/diagnostic_figures/
+/review_results/**/loss_diagnostics/
+/review_results/**/window_eval/
+/review_results/**/*.pt
+/review_results/**/*.npz
+/review_results/tesla/cache/

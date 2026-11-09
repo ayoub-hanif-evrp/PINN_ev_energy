@@ -1,0 +1,35 @@
+{
+  "profile": "tesla_bev2_loto",
+  "out_dir": "C:\\Users\\AYOUB\\OneDrive - EMSI\\Bureau\\PHD_WORK\\PINN_ev_energy\\review_results\\tesla\\loto\\tesla_bev2_loto",
+  "flags": [
+    "negative_predicted_energy",
+    "absurd_power_hundreds_of_kw"
+  ],
+  "n_rows": 68,
+  "methods": [
+    "physics",
+    "pinn",
+    "ridge",
+    "weak_mlp"
+  ],
+  "n_trips": 17,
+  "n_seeds": 1,
+  "n_negative_predicted_energy": 2,
+  "negative_energy_rows": [
+    {
+      "trip_id": "BEV2_2024-07-29_drive2",
+      "method": "weak_mlp",
+      "predicted_energy_kwh": -0.8272084481186337
+    },
+    {
+      "trip_id": "BEV2_2024-11-13_drive2",
+      "method": "ridge",
+      "predicted_energy_kwh": -0.5359757305054753
+    }
+  ],
+  "n_absurd_power": 2,
+  "n_saturated": 0,
+  "n_manifests": 17,
+  "n_recorded_failures": 0,
+  "ok": false
+}

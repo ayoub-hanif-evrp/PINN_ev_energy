@@ -14,6 +14,10 @@ METHOD_LABELS = {
     "ridge": "Ridge Regression",
     "weak_mlp": "Data-Driven MLP",
     "pinn": "PINN",
+    "pinn_fulltrip": "PINN (full-trip only)",
+    "pinn_no_dynamics": "PINN (no conservation)",
+    "pinn_no_state": "PINN (no state loss)",
+    "pinn_no_prior": "PINN (no residual prior)",
 }
 
 METHOD_COLORS = {
