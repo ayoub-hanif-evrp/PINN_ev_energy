@@ -3,9 +3,9 @@ extends: ../base.yaml
 # REVIEW ONLY — Tesla Model Y LR (BEV2). Does not modify paper Twizy configs.
 
 experiment:
-  profile: tesla_bev2_loto
+  profile: tesla_bev2_loto_corrected
   seed: 0
-  seeds: [0]
+  seeds: [0, 1, 2]
   methods:
     - physics
     - ridge
@@ -76,3 +76,5 @@ tesla:
   pool_size: 17
   pool_seed: 2026
   grade_assumption: flat_road_theta_0
+  absurd_power_kw: 400.0
+  feature_adapted: true

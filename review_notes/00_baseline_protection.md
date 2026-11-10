@@ -7,7 +7,8 @@
 | Review branch | `review/intis2026-validation` |
 | Baseline commit | `0a85b57c3cad6d81a9dfb225f69445546860cc50` |
 | Baseline message | Simplify the manuscript data table for the problem-formulation section. |
-| `main` policy | Unchanged. Do not push this review branch while the repo is public. |
+| `main` policy | Unchanged. Do not merge review into `main` until camera-ready is approved. |
+| Remote status | Branch pushed to `origin/review/intis2026-validation`. Repo is currently public; change visibility separately if needed. |
 
 Untracked local manuscript files (`.docx`, `.pdf`, `.pptx`, `intis submission.png`) were left untracked and are not part of this review work.
 

@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from data.preprocessing import ProcessedTrip
+from units import energy_kwh_from_power
 
 
 REQUIRED_COLS = (
@@ -45,8 +46,13 @@ def load_tesla_trip_csv(path: Path, vehicle: str) -> ProcessedTrip:
         "current_sign=positive_discharge",
     ]
     e_meas = float("nan")
-    if frame["p_meas_kw"].notna().any():
-        e_meas = float(np.nansum(frame["p_meas_kw"].to_numpy(dtype=float) * frame["dt_s"].to_numpy(dtype=float) / 3600.0))
+    if frame["p_meas_kw"].notna().any() and "dt_s" in frame.columns:
+        e_meas = float(
+            energy_kwh_from_power(
+                frame["p_meas_kw"].to_numpy(dtype=float),
+                frame["dt_s"].to_numpy(dtype=float),
+            )
+        )
     stats = {
         "n_rows": int(len(frame)),
         "e_meas_kwh": e_meas,

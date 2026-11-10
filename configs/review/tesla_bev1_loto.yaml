@@ -3,9 +3,9 @@ extends: ../base.yaml
 # REVIEW ONLY — Tesla Model Y SR (BEV1). Does not modify paper Twizy configs.
 
 experiment:
-  profile: tesla_bev1_loto
+  profile: tesla_bev1_loto_corrected
   seed: 0
-  seeds: [0]
+  seeds: [0, 1, 2]
   methods:
     - physics
     - ridge
@@ -56,8 +56,7 @@ physics:
 training:
   max_epochs: 1200
   early_stopping_patience: 100
-  # Predetermined residual bound (train-only percentile protocol; see calibrate script).
-  # Interim default 40 kW until train-pool calibration overwrites via CLI.
+  # Overwritten by physics-only disjoint-calib rule in residual_calibration_bev1.json.
   residual_limit_kw: 40.0
   mlp_power_center_kw: 15.0
   mlp_power_half_range_kw: 80.0
@@ -82,3 +81,5 @@ tesla:
   pool_size: 17
   pool_seed: 2026
   grade_assumption: flat_road_theta_0
+  absurd_power_kw: 400.0
+  feature_adapted: true

@@ -1,10 +1,13 @@
 {
   "vehicle": "BEV2",
-  "n_trips": 17,
-  "pool_file": "review_results/tesla/pools/bev2_pool.json",
-  "abs_err_p50_kw": 3.5961351218656916,
-  "abs_err_p95_kw": 23.84765804298538,
-  "abs_err_p99_kw": 46.78430662769853,
+  "n_calib_trips": 17,
+  "calib_pool_file": "review_results/tesla/pools/bev2_calib_pool.json",
+  "eval_pool_file": "review_results/tesla/pools/bev2_pool.json",
+  "n_eval_trips_excluded": 17,
+  "abs_Pphysics_p50_kw": 6.555256282053508,
+  "abs_Pphysics_p95_kw": 31.224664670975038,
+  "target_L_kw": 15.612332335487519,
+  "phys_fraction": 0.5,
   "grid_kw": [
     10.0,
     20.0,
@@ -12,7 +15,9 @@
     60.0,
     80.0
   ],
-  "chosen_residual_limit_kw": 40.0,
-  "rule": "smallest_grid_value_ge_train_pool_p95_|Pmeas-Pphysics|",
-  "note": "Measured power used only for bound calibration diagnostic; not a training target."
+  "chosen_residual_limit_kw": 20.0,
+  "rule": "smallest_grid_ge_0.5_times_P95_abs_Pphysics_on_disjoint_calib",
+  "uses_measured_power": false,
+  "note": "No voltage/current/P_meas used. Eval-pool trips excluded from L selection.",
+  "supersedes": "prior residual_calibration that used |Pmeas-Pphysics| on eval pool"
 }

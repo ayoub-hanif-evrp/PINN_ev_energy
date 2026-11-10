@@ -10,17 +10,28 @@ import numpy as np
 import pandas as pd
 
 
-ABSURD_POWER_KW = 200.0
+ABSURD_POWER_KW = 200.0  # Twizy-oriented default heuristic
 SATURATION_FLAG = 0.95
 
 
-def inspect_loto_dir(out_dir: Path, table: pd.DataFrame | None = None, profile: str = "") -> dict[str, Any]:
+def inspect_loto_dir(
+    out_dir: Path,
+    table: pd.DataFrame | None = None,
+    profile: str = "",
+    absurd_power_kw: float | None = None,
+) -> dict[str, Any]:
     out_dir = Path(out_dir)
     if table is None:
         pred_path = out_dir / "per_trip_predictions.csv"
         table = pd.read_csv(pred_path) if pred_path.exists() else pd.DataFrame()
     flags: list[str] = []
-    report: dict[str, Any] = {"profile": profile, "out_dir": str(out_dir), "flags": flags}
+    power_thresh = float(ABSURD_POWER_KW if absurd_power_kw is None else absurd_power_kw)
+    report: dict[str, Any] = {
+        "profile": profile,
+        "out_dir": str(out_dir),
+        "flags": flags,
+        "absurd_power_threshold_kw": power_thresh,
+    }
 
     if table is None or table.empty:
         flags.append("empty_predictions")
@@ -43,10 +54,13 @@ def inspect_loto_dir(out_dir: Path, table: pd.DataFrame | None = None, profile: 
         report["negative_energy_rows"] = neg[["trip_id", "method", "predicted_energy_kwh"]].to_dict("records")
 
     if "power_max" in table.columns:
-        absurd = table.loc[table["power_max"] > ABSURD_POWER_KW]
+        absurd = table.loc[table["power_max"] > power_thresh]
         report["n_absurd_power"] = int(len(absurd))
         if len(absurd):
-            flags.append("absurd_power_hundreds_of_kw")
+            flags.append("high_predicted_peak_power")
+            report["high_power_rows"] = absurd[
+                [c for c in ("trip_id", "method", "seed", "power_max") if c in absurd.columns]
+            ].to_dict("records")
         if "saturation_fraction" in table.columns:
             sat = table.loc[table["saturation_fraction"] > SATURATION_FLAG]
             report["n_saturated"] = int(len(sat))
@@ -81,8 +95,13 @@ def inspect_loto_dir(out_dir: Path, table: pd.DataFrame | None = None, profile: 
     return report
 
 
-def write_sanity_report(out_dir: Path, table: pd.DataFrame | None = None, profile: str = "") -> dict[str, Any]:
-    report = inspect_loto_dir(out_dir, table=table, profile=profile)
+def write_sanity_report(
+    out_dir: Path,
+    table: pd.DataFrame | None = None,
+    profile: str = "",
+    absurd_power_kw: float | None = None,
+) -> dict[str, Any]:
+    report = inspect_loto_dir(out_dir, table=table, profile=profile, absurd_power_kw=absurd_power_kw)
     path = Path(out_dir) / "sanity_report.json"
     path.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
     print(f"Sanity report: ok={report.get('ok')} flags={report.get('flags')} -> {path}", flush=True)

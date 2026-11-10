@@ -1,0 +1,46 @@
+{
+  "tesla_bev1_loto_corrected": {
+    "soc_meas_mae": 0.49670605021276326,
+    "n_seeds": 3,
+    "soc": {
+      "paired_mean_pinn_minus_mlp": -0.3471982743897899,
+      "n_pinn_better": 12,
+      "n": 17,
+      "ci95": [
+        -0.618717165013564,
+        -0.11438590052442925
+      ]
+    },
+    "meas": {
+      "paired_mean_pinn_minus_mlp": -0.14051955038245034,
+      "n_pinn_better": 9,
+      "n": 17,
+      "ci95": [
+        -0.4045204277119379,
+        0.07166843339275288
+      ]
+    }
+  },
+  "tesla_bev2_loto_corrected": {
+    "soc_meas_mae": 0.3314232182007246,
+    "n_seeds": 3,
+    "soc": {
+      "paired_mean_pinn_minus_mlp": -0.09548834411365659,
+      "n_pinn_better": 11,
+      "n": 17,
+      "ci95": [
+        -0.3831418201301748,
+        0.17749671325795524
+      ]
+    },
+    "meas": {
+      "paired_mean_pinn_minus_mlp": -0.1895014007976225,
+      "n_pinn_better": 11,
+      "n": 17,
+      "ci95": [
+        -0.4917662011642741,
+        0.09195498062798192
+      ]
+    }
+  }
+}

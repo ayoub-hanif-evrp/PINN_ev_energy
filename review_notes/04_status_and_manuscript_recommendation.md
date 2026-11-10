@@ -1,51 +1,29 @@
 # Review status and camera-ready recommendation
 
-Date: 2026-11-09  
-Branch: `review/intis2026-validation` (local only; not pushed)  
+Date: 2026-11-10  
+Branch: `review/intis2026-validation` (on `origin`; repo currently public)  
 Baseline: `0a85b57`
 
 ## Completed
 
 | Phase | Status |
 |---|---|
-| 0 Protect original research | Done — branch created; `main` untouched; baseline recorded |
-| 1 Method audit | Done — `review_notes/01_method_audit.md` |
-| 2 Ablations from cache | Done — table + paired tests in `review_results/ablations/` |
-| 3 BMW feasibility | Done as **NO-GO** until Measurement Data are downloaded |
-| Tesla dataset audit | Done — `review_notes/tesla_dataset_audit.md` |
-| Tesla GO/NO-GO | **CONDITIONAL GO** — `review_notes/tesla_go_nogo.md` |
-| Tesla primary LOTO | Done — BEV1 & BEV2, 17 trips each, seed 0 |
-| Tesla validation report | Done — `review_notes/tesla_validation_report.md` |
-| Sensitivity | Planned — `review_notes/03_sensitivity_plan.md` (Twizy residual/capacity) |
+| Protect `main` | Done |
+| HELECAR-D ablations + honest interpretation | Done — `02_ablation_interpretation.md` |
+| Tesla audit / GO-NOGO | Done |
+| Tesla protocol fixes (L leak, dt, sanity, 3 seeds) | Done — corrected LOTO |
+| Twizy residual + λ sensitivity | Done — `05_sensitivity_findings.md` |
+| Capacity sensitivity | Running / see `review_results/sensitivity/` |
+| Camera-ready revision package | Draft — `camera_ready_revisions.md` |
 
-## Strong enough for camera-ready today
+## Camera-ready recommendation
 
-1. **Ablation table from cached HELECAR-D LOTO**, including the honest full-trip finding.
-2. Keep original main results unchanged.
-3. **Optional Tesla subsection (~½ page)** — feature-adapted external replication; PINN≈MLP; physics beaten; V×I eval-only. See draft in `tesla_validation_report.md` §10.
+Enough validated evidence exists for a precise ≤15-page revision:
 
-## Not yet / secondary
+1. Keep HELECAR-D main results unchanged.  
+2. Add honest ablation table + consistency diagnostics paragraph.  
+3. Add ~½-page feature-adapted Tesla subsection with corrected table and limitations.  
+4. Add short L / λ sensitivity sentence (defaults not retuned).  
+5. Condense methodology; clarify novelty; fix Eq. 4 references.
 
-1. BMW i3 — still NO-GO (no local Measurement Data).
-2. Twizy residual/capacity sensitivity grids — optional if time remains.
-3. Tesla scarcity — partial BEV1 cells only (n=3/5/8); supportive but not definitive.
-4. Tesla multi-seed — not run (CPU); single seed 0 documented.
-
-## Manuscript integration (do not auto-edit the paper)
-
-### A. Ablation table (recommended)
-
-Physics / MLP / Full PINN / Full-trip PINN / No-conservation PINN  
-with MAE and 95% CI; footnote that full-trip has lower point MAE but paired CI includes zero.
-
-### B. External vehicle (Tesla, optional)
-
-One short table + ~½ page. Frame as feature-adapted re-training on Model Y, not zero-shot transfer. Do not compare absolute Twizy/Tesla MAE as like-for-like. Do not expand into a multi-vehicle benchmark.
-
-### C. Sensitivity
-
-One compact sensitivity summary for residual bound and capacity, if compute finishes before camera-ready deadline.
-
-## Original contribution remains protected
-
-No change to `results/` paper artifacts, no overwrite of `configs/paper.yaml` / `base.yaml` / `vehicle_twizy.yaml`, no push of this branch or datasets.
+Do **not** invent stronger PINN claims than the CIs support.

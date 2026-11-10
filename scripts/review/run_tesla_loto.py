@@ -117,7 +117,9 @@ def main() -> int:
     agree = enriched.drop_duplicates("trip_id")[["trip_id", "e_soc_kwh", "e_meas_kwh"]].copy()
     agree["abs_diff_kwh"] = (agree["e_soc_kwh"] - agree["e_meas_kwh"]).abs()
     agree.to_csv(out_dir / "soc_vs_meas_agreement.csv", index=False)
-    write_sanity_report(out_dir, table, profile=profile)
+    # Model Y can briefly exceed 200 kW battery power; use a Tesla-aware diagnostic.
+    absurd_kw = float(config.get("tesla", {}).get("absurd_power_kw", 400.0))
+    write_sanity_report(out_dir, table, profile=profile, absurd_power_kw=absurd_kw)
     print(summary_meas.to_string(index=False))
     print(summary_soc.to_string(index=False))
     return 0
