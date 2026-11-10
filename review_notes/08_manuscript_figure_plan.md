@@ -36,8 +36,9 @@ Do **not** replace or regenerate these without a specific reason.
 
 **Use `figAB_ablation_tesla_two_panel`** as one Springer figure (e.g. Fig. 5) if the optional Tesla subsection is kept:
 
-- Panel (a): honest ablation message (within-PINN CIs cross zero).  
-- Panel (b): corrected Tesla V×I point MAE only; no significance claim.
+- Panel (a): HELECAR-D ablation (within-PINN CIs cross zero).  
+- Panel (b): Tesla Model Y validation — V×I point MAE only; no significance claim.  
+- Figure titles avoid internal terms such as “corrected”; use authoritative `*_loto_corrected` sources only.
 
 If Tesla is dropped for page reasons: insert **`figA_ablation_paired_diff`** only.
 
@@ -71,10 +72,16 @@ If Tesla is dropped for page reasons: insert **`figA_ablation_paired_diff`** onl
 ## Caption pack (for paste after review)
 
 **Fig. AB (recommended)**  
-> (a) Paired trip-energy absolute-error differences (Full PINN − comparator) on HELECAR-D (17 trips; 95% paired bootstrap CIs). Negative values indicate lower Full-PINN error. (b) Feature-adapted Tesla Model Y MAE versus independent V×I energy (17 sessions per configuration; neural seeds 0–1–2). Panel (b) shows point MAE only and does not claim statistically significant superiority on measured energy.
+> (a) Paired differences in trip-energy absolute error between the full PINN and comparison methods on HELECAR-D (17 trips; markers: means; whiskers: 95% paired bootstrap CIs; negative values favor the full PINN). (b) Trip-energy MAE on two Tesla Model Y configurations against independently measured battery energy (V×I; 17 trips per configuration; three neural seeds; four-feature flat-road adaptation). Differences between PINN and MLP against measured energy are not statistically conclusive.
 
-**Fig. A (fallback)** — see `review_results/figures/README.md`.  
-**Fig. C (repo)** — see same README.
+**Fig. A (fallback)**  
+> Paired differences in trip-energy absolute error between the full PINN and comparison methods on HELECAR-D (17 trips). Markers indicate mean differences and whiskers show 95% paired bootstrap confidence intervals. Negative values favor the full PINN.
+
+**Fig. B (if used alone)**  
+> Trip-energy MAE for the Physics Model, Data-Driven MLP, and PINN on two Tesla Model Y configurations, evaluated against independently measured battery energy (V×I). Results cover 17 evaluation trips per configuration and three neural initialization seeds. The method uses a documented four-feature, flat-road adaptation. Differences between PINN and MLP against measured energy are not statistically conclusive.
+
+**Fig. C (repo)**  
+> Trip-energy MAE of the Twizy PINN for predetermined residual bounds \(L\in\{2,4,6,8\}\) kW. The highlighted marker is the accepted reference \(L=4\) kW; the lower point estimate at \(L=6\) kW was not adopted from outer-test ranks.
 
 ---
 

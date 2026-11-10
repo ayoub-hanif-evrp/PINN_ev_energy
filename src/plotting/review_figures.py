@@ -21,10 +21,19 @@ ABLATION_ORDER = [
     "PINN no residual prior",
 ]
 
+ABLATION_SHORT = {
+    "Physics Model": "Physics",
+    "Data-Driven MLP": "MLP",
+    "PINN full-trip only": "Full-trip only",
+    "PINN no conservation": "No conservation",
+    "PINN no state loss": "No state loss",
+    "PINN no residual prior": "No residual prior",
+}
+
 TESLA_METHODS = ["physics", "weak_mlp", "pinn"]
 TESLA_PROFILES = {
-    "tesla_bev1_loto_corrected": "Model Y BEV1",
-    "tesla_bev2_loto_corrected": "Model Y BEV2",
+    "tesla_bev1_loto_corrected": "BEV1",
+    "tesla_bev2_loto_corrected": "BEV2",
 }
 
 
@@ -53,6 +62,14 @@ def _parse_comparator(comparison: str) -> str:
     return str(comparison)[len(prefix) :]
 
 
+def _marker_style(name: str) -> tuple[str, str]:
+    if name == "Physics Model":
+        return METHOD_COLORS["physics"], METHOD_MARKERS["physics"]
+    if name == "Data-Driven MLP":
+        return METHOD_COLORS["weak_mlp"], METHOD_MARKERS["weak_mlp"]
+    return METHOD_COLORS["pinn"], "D"
+
+
 def load_and_verify_ablation_paired(path: Path) -> pd.DataFrame:
     paired = pd.read_csv(path)
     required = {"comparison", "mean_diff_kWh", "CI_low", "CI_high"}
@@ -61,7 +78,6 @@ def load_and_verify_ablation_paired(path: Path) -> pd.DataFrame:
         raise ValueError(f"Ablation paired table missing columns: {sorted(missing)}")
     paired = paired.copy()
     paired["comparator"] = paired["comparison"].map(_parse_comparator)
-    # Interval must contain the mean.
     bad = ~(
         (paired["CI_low"] <= paired["mean_diff_kWh"] + 1e-12)
         & (paired["mean_diff_kWh"] <= paired["CI_high"] + 1e-12)
@@ -72,8 +88,7 @@ def load_and_verify_ablation_paired(path: Path) -> pd.DataFrame:
     missing_names = [n for n in ABLATION_ORDER if n not in present]
     if missing_names:
         raise ValueError(f"Ablation paired table missing comparators: {missing_names}")
-    ordered = paired.set_index("comparator").loc[ABLATION_ORDER].reset_index()
-    return ordered
+    return paired.set_index("comparator").loc[ABLATION_ORDER].reset_index()
 
 
 def load_and_verify_tesla_mae(loto_root: Path) -> pd.DataFrame:
@@ -87,7 +102,6 @@ def load_and_verify_tesla_mae(loto_root: Path) -> pd.DataFrame:
             raise ValueError(f"Missing abs_err_vs_meas_kwh in {profile}")
         for method in TESLA_METHODS:
             g = detail.loc[detail["method"] == method]
-            # Seed-mean AE per trip, then mean over trips (paper neural aggregation).
             trip_ae = g.groupby("trip_id", sort=True)["abs_err_vs_meas_kwh"].mean()
             if len(trip_ae) != 17:
                 raise ValueError(f"{profile}/{method}: expected 17 trips, got {len(trip_ae)}")
@@ -124,7 +138,6 @@ def load_and_verify_sensitivity_L(mae_path: Path) -> pd.DataFrame:
             raise ValueError(f"Expected one row for {key} in {mae_path}")
         rows.append({"L_kW": L, "mae_kwh": float(hit.iloc[0]), "is_reference": L == 4})
     frame = pd.DataFrame(rows)
-    # Cross-check per-config summary files when present.
     root = mae_path.parent
     for _, row in frame.iterrows():
         summary = root / f"summary_L_{int(row['L_kW'])}.csv"
@@ -145,7 +158,7 @@ def fig_ablation_paired_diff(paired: pd.DataFrame, path: Path) -> dict[str, Path
     hi = paired["CI_high"].to_numpy(dtype=float)
     xerr = np.vstack([means - lo, hi - means])
 
-    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    fig, ax = plt.subplots(figsize=(6.8, 3.8))
     ax.axvline(0.0, color="0.35", lw=1.2, zorder=1)
     ax.errorbar(
         means,
@@ -158,60 +171,22 @@ def fig_ablation_paired_diff(paired: pd.DataFrame, path: Path) -> dict[str, Path
         zorder=2,
     )
     for i, (mean, name) in enumerate(zip(means, paired["comparator"])):
-        # Baselines use paper colors; within-PINN ablations use PINN blue.
-        if name == "Physics Model":
-            color, marker = METHOD_COLORS["physics"], METHOD_MARKERS["physics"]
-        elif name == "Data-Driven MLP":
-            color, marker = METHOD_COLORS["weak_mlp"], METHOD_MARKERS["weak_mlp"]
-        else:
-            color, marker = METHOD_COLORS["pinn"], "D"
-        ax.plot(mean, y[i], marker=marker, color=color, ms=10, zorder=3, markeredgecolor="0.15", markeredgewidth=0.4)
-        ax.annotate(
-            f"{mean:+.3f}",
-            (mean, y[i]),
-            textcoords="offset points",
-            xytext=(0, 8),
-            ha="center",
-            va="bottom",
-            fontsize=9.5,
-            annotation_clip=False,
+        color, marker = _marker_style(name)
+        ax.plot(
+            mean,
+            y[i],
+            marker=marker,
+            color=color,
+            ms=10,
+            zorder=3,
+            markeredgecolor="0.15",
+            markeredgewidth=0.4,
         )
 
     ax.set_yticks(y)
-    ax.set_yticklabels([f"vs {n}" for n in paired["comparator"]])
-    ax.set_xlabel(r"Paired trip AE difference: Full PINN $-$ comparator (kWh)")
-    ax.text(
-        0.02,
-        0.98,
-        "← Full PINN lower error",
-        transform=ax.transAxes,
-        ha="left",
-        va="top",
-        fontsize=9.5,
-        color="0.25",
-    )
-    ax.text(
-        0.98,
-        0.98,
-        "Comparator lower error →",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=9.5,
-        color="0.25",
-    )
-    ax.text(
-        0.99,
-        0.03,
-        "whiskers: 95% paired bootstrap CI",
-        transform=ax.transAxes,
-        ha="right",
-        va="bottom",
-        fontsize=9.5,
-        color="0.25",
-    )
-    # Invert so first row (Physics) is at top.
-    ax.set_ylim(len(paired) - 0.55, -0.75)
+    ax.set_yticklabels([ABLATION_SHORT[n] for n in paired["comparator"]])
+    ax.set_xlabel("Paired MAE difference (kWh)")
+    ax.set_ylim(len(paired) - 0.55, -0.55)
     ax.grid(True, axis="x", alpha=0.25)
     ax.grid(False, axis="y")
     fig.tight_layout()
@@ -222,15 +197,14 @@ def fig_tesla_meas_mae(tesla: pd.DataFrame, path: Path) -> dict[str, Path]:
     """Grouped MAE bars vs independent V×I energy (no CI — not in summary)."""
     apply_style()
     datasets = [TESLA_PROFILES[k] for k in TESLA_PROFILES]
-    methods = TESLA_METHODS
     x = np.arange(len(datasets))
     width = 0.24
-    fig, ax = plt.subplots(figsize=(7.2, 3.9))
-    for i, method in enumerate(methods):
-        vals = []
-        for ds in datasets:
-            row = tesla.loc[(tesla["dataset"] == ds) & (tesla["method"] == method)]
-            vals.append(float(row["mae_kwh"].iloc[0]))
+    fig, ax = plt.subplots(figsize=(6.4, 3.6))
+    for i, method in enumerate(TESLA_METHODS):
+        vals = [
+            float(tesla.loc[(tesla["dataset"] == ds) & (tesla["method"] == method), "mae_kwh"].iloc[0])
+            for ds in datasets
+        ]
         offset = (i - 1) * width
         bars = ax.bar(
             x + offset,
@@ -254,19 +228,14 @@ def fig_tesla_meas_mae(tesla: pd.DataFrame, path: Path) -> dict[str, Path]:
             )
     ax.set_xticks(x)
     ax.set_xticklabels(datasets)
-    ax.set_ylabel("Trip-energy MAE vs measured V×I (kWh)")
-    ax.set_ylim(0, max(tesla["mae_kwh"]) * 1.22)
-    ax.legend(loc="upper right", ncol=1)
-    ax.text(
-        0.01,
-        0.98,
-        "17 evaluation trips / configuration; neural methods: seeds 0–1–2\n"
-        "Feature-adapted (4 inputs, flat road); no significance claim vs V×I",
-        transform=ax.transAxes,
-        ha="left",
-        va="top",
-        fontsize=8.5,
-        color="0.25",
+    ax.set_ylabel("Trip-energy MAE (kWh)")
+    ax.set_ylim(0, float(tesla["mae_kwh"].max()) * 1.18)
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.18),
+        ncol=3,
+        frameon=False,
+        fontsize=9,
     )
     ax.grid(True, axis="y", alpha=0.25)
     ax.grid(False, axis="x")
@@ -277,7 +246,7 @@ def fig_tesla_meas_mae(tesla: pd.DataFrame, path: Path) -> dict[str, Path]:
 def fig_sensitivity_L(frame: pd.DataFrame, path: Path) -> dict[str, Path]:
     """Twizy residual-bound sensitivity: point MAE only (no CI in archive)."""
     apply_style()
-    fig, ax = plt.subplots(figsize=(6.6, 3.6))
+    fig, ax = plt.subplots(figsize=(5.8, 3.4))
     L = frame["L_kW"].to_numpy(dtype=float)
     mae = frame["mae_kwh"].to_numpy(dtype=float)
     ax.plot(L, mae, color="0.55", lw=1.4, zorder=1)
@@ -287,44 +256,18 @@ def fig_sensitivity_L(frame: pd.DataFrame, path: Path) -> dict[str, Path]:
             row["L_kW"],
             row["mae_kwh"],
             marker="o" if is_ref else "s",
-            ms=11 if is_ref else 9,
+            ms=11 if is_ref else 8.5,
             color=METHOD_COLORS["pinn"] if is_ref else "#333333",
             markeredgecolor="0.15",
             markeredgewidth=0.5,
             zorder=3,
+            label="Reference (L = 4 kW)" if is_ref else None,
         )
-        ax.annotate(
-            f"{row['mae_kwh']:.3f}",
-            (row["L_kW"], row["mae_kwh"]),
-            textcoords="offset points",
-            xytext=(0, 10),
-            ha="center",
-            fontsize=10,
-        )
-    # Mark accepted reference vs lower point estimate at L=6.
-    ref_mae = float(frame.loc[frame["L_kW"] == 4, "mae_kwh"].iloc[0])
-    l6_mae = float(frame.loc[frame["L_kW"] == 6, "mae_kwh"].iloc[0])
-    ax.axvline(4, color=METHOD_COLORS["pinn"], ls="--", lw=1.2, alpha=0.7, zorder=0)
-    ax.annotate(
-        "Accepted reference\n(L = 4 kW)",
-        xy=(4, ref_mae),
-        xytext=(2.15, ref_mae + 0.045),
-        fontsize=9,
-        color=METHOD_COLORS["pinn"],
-        arrowprops=dict(arrowstyle="->", color=METHOD_COLORS["pinn"], lw=1.0),
-    )
-    ax.annotate(
-        "Lower point MAE\n(not adopted)",
-        xy=(6, l6_mae),
-        xytext=(6.7, l6_mae - 0.035),
-        fontsize=9,
-        color="0.25",
-        arrowprops=dict(arrowstyle="->", color="0.4", lw=1.0),
-    )
     ax.set_xlabel("Residual bound L (kW)")
     ax.set_ylabel("Trip-energy MAE (kWh)")
     ax.set_xticks([2, 4, 6, 8])
-    ax.set_ylim(min(mae) - 0.05, max(mae) + 0.06)
+    ax.set_ylim(float(mae.min()) - 0.04, float(mae.max()) + 0.04)
+    ax.legend(loc="upper left", frameon=True, fontsize=9)
     ax.grid(True, axis="both", alpha=0.25)
     fig.tight_layout()
     return save_publication(fig, path)
@@ -337,9 +280,10 @@ def fig_ablation_tesla_two_panel(
 ) -> dict[str, Path]:
     """Compact two-panel manuscript candidate: ablation diffs + Tesla V×I MAE."""
     apply_style()
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.0), gridspec_kw={"width_ratios": [1.15, 1.0]})
+    # Springer single-column ~122 mm; two-panel across ~ page width ≈ 170 mm ≈ 6.7 in
+    # Use a readable double-column width for LNCS.
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.2), gridspec_kw={"width_ratios": [1.05, 1.0]})
 
-    # Panel A — full paired set (baselines + ablations) with short labels.
     use = paired.reset_index(drop=True)
     ax = axes[0]
     y = np.arange(len(use))
@@ -348,33 +292,27 @@ def fig_ablation_tesla_two_panel(
     hi = use["CI_high"].to_numpy(dtype=float)
     xerr = np.vstack([means - lo, hi - means])
     ax.axvline(0.0, color="0.35", lw=1.1, zorder=1)
-    ax.errorbar(means, y, xerr=xerr, fmt="none", ecolor="#222222", elinewidth=1.4, capsize=3.5, zorder=2)
+    ax.errorbar(means, y, xerr=xerr, fmt="none", ecolor="#222222", elinewidth=1.3, capsize=3.2, zorder=2)
     for i, (mean, name) in enumerate(zip(means, use["comparator"])):
-        if name == "Physics Model":
-            color, marker = METHOD_COLORS["physics"], METHOD_MARKERS["physics"]
-        elif name == "Data-Driven MLP":
-            color, marker = METHOD_COLORS["weak_mlp"], METHOD_MARKERS["weak_mlp"]
-        else:
-            color, marker = METHOD_COLORS["pinn"], "D"
-        ax.plot(mean, y[i], marker=marker, color=color, ms=8.5, zorder=3, markeredgecolor="0.15", markeredgewidth=0.4)
-    short = {
-        "Physics Model": "vs Physics",
-        "Data-Driven MLP": "vs MLP",
-        "PINN full-trip only": "vs full-trip only",
-        "PINN no conservation": "vs no conservation",
-        "PINN no state loss": "vs no state",
-        "PINN no residual prior": "vs no prior",
-    }
+        color, marker = _marker_style(name)
+        ax.plot(
+            mean,
+            y[i],
+            marker=marker,
+            color=color,
+            ms=8,
+            zorder=3,
+            markeredgecolor="0.15",
+            markeredgewidth=0.4,
+        )
     ax.set_yticks(y)
-    ax.set_yticklabels([short[n] for n in use["comparator"]])
-    ax.set_xlabel(r"Full PINN $-$ comparator AE (kWh)")
-    ax.set_title("(a) HELECAR-D ablation (paired)", fontsize=11)
-    ax.text(0.02, 0.02, "← PINN better", transform=ax.transAxes, fontsize=8.5, color="0.3")
-    ax.set_ylim(len(use) - 0.5, -0.65)
+    ax.set_yticklabels([ABLATION_SHORT[n] for n in use["comparator"]])
+    ax.set_xlabel("Paired MAE difference (kWh)")
+    ax.set_title("(a) HELECAR-D ablation", fontsize=10)
+    ax.set_ylim(len(use) - 0.5, -0.5)
     ax.grid(True, axis="x", alpha=0.25)
     ax.grid(False, axis="y")
 
-    # Panel B — Tesla MAE bars.
     ax = axes[1]
     datasets = [TESLA_PROFILES[k] for k in TESLA_PROFILES]
     x = np.arange(len(datasets))
@@ -406,18 +344,10 @@ def fig_ablation_tesla_two_panel(
             )
     ax.set_xticks(x)
     ax.set_xticklabels(datasets)
-    ax.set_ylabel("MAE vs V×I (kWh)")
-    ax.set_title("(b) Tesla feature-adapted (corrected)", fontsize=11)
-    ax.set_ylim(0, max(tesla["mae_kwh"]) * 1.28)
-    ax.legend(fontsize=8.5, loc="upper right")
-    ax.text(
-        0.02,
-        0.02,
-        "n=17 trips/config; seeds 0–1–2",
-        transform=ax.transAxes,
-        fontsize=8,
-        color="0.3",
-    )
+    ax.set_ylabel("Trip-energy MAE (kWh)")
+    ax.set_title("(b) Tesla Model Y validation", fontsize=10)
+    ax.set_ylim(0, float(tesla["mae_kwh"].max()) * 1.22)
+    ax.legend(fontsize=8, loc="upper right", frameon=True)
     ax.grid(True, axis="y", alpha=0.25)
     ax.grid(False, axis="x")
 

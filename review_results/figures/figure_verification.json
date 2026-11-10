@@ -32,12 +32,12 @@
     }
   },
   "tesla_mae_vs_meas_kWh": {
-    "Model Y BEV1/physics": 1.0511887088680836,
-    "Model Y BEV1/weak_mlp": 0.9712489284158129,
-    "Model Y BEV1/pinn": 0.8307293780333623,
-    "Model Y BEV2/physics": 0.9719385714546661,
-    "Model Y BEV2/weak_mlp": 0.9169377751391,
-    "Model Y BEV2/pinn": 0.7274363743414776
+    "BEV1/physics": 1.0511887088680836,
+    "BEV1/weak_mlp": 0.9712489284158129,
+    "BEV1/pinn": 0.8307293780333623,
+    "BEV2/physics": 0.9719385714546661,
+    "BEV2/weak_mlp": 0.9169377751391,
+    "BEV2/pinn": 0.7274363743414776
   },
   "sensitivity_L_mae_kWh": {
     "2": 0.3004743159344449,
