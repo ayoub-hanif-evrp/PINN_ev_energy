@@ -1,11 +1,27 @@
 {
-  "suite": "capacity",
-  "seeds": [
-    0,
-    1,
-    2
+  "n_configurations": 13,
+  "variants": [
+    "L_2",
+    "L_4",
+    "L_6",
+    "L_8",
+    "lambda_dynamics_x0.5",
+    "lambda_dynamics_x1",
+    "lambda_dynamics_x2",
+    "lambda_prior_x0.5",
+    "lambda_prior_x1",
+    "lambda_prior_x2",
+    "capacity_5.5",
+    "capacity_6",
+    "capacity_6.5"
   ],
-  "methods": [
-    "pinn"
-  ]
+  "seeds": [0, 1, 2],
+  "methods": ["pinn"],
+  "n_rows_per_config": 51,
+  "note": "Predetermined grids; do not select a new paper default from outer-test ranks. all_sensitivity_mae.csv rebuilt to include all 13 configs.",
+  "authoritative_tesla_profiles": [
+    "tesla_bev1_loto_corrected",
+    "tesla_bev2_loto_corrected"
+  ],
+  "git_commit_at_archive_fix": "3b53bc4"
 }

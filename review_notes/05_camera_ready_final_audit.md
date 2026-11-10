@@ -2,10 +2,12 @@
 
 **Paper:** Physics-Informed Neural Network for Electric Vehicle Energy Estimation under Data Scarcity (Paper 62)  
 **Deadline:** 15 November 2026  
-**Branch:** `review/intis2026-validation` (ahead of `main` @ `0a85b57`; local corrections beyond pushed `c301072`)  
-**Audit date:** 10 November 2026  
+**Branch:** `review/intis2026-validation` (tracks `origin/review/intis2026-validation`)  
+**Pushed HEAD reflected by this audit:** `3b53bc4` — *Correct Tesla validation leakage and freeze camera-ready review evidence.*  
+**Audit date:** 10 November 2026 (archive consistency refresh same day)
 
-**Scope of this document:** Verify completed experiments, state what is publication-ready, and propose *minimal* manuscript additions. **The accepted manuscript was not edited.**
+**Scope of this document:** Verify completed experiments, state what is publication-ready, and propose *minimal* manuscript additions. **The accepted manuscript was not edited.**  
+**Section-by-section revision plan (no docx overwrite):** `review_notes/07_camera_ready_section_plan.md`
 
 Status legend used below: **COMPLETED** · **VERIFIED** · **NEEDS CORRECTION** · **NOT NECESSARY**
 
@@ -56,8 +58,13 @@ Original HELECAR-D main results, PINN architecture, and paper configs remain unt
 | Artifact | Path |
 |---|---|
 | Runner | `scripts/review/run_twizy_sensitivity.py` |
-| Summaries | `review_results/sensitivity/summary_*.csv` |
+| Per-config summaries | `review_results/sensitivity/summary_*.csv` (13) |
+| Aggregate MAE | `review_results/sensitivity/all_sensitivity_mae.csv` (**13 rows**; rebuilt to include L, λ, and capacity grids) |
+| Aggregate predictions | `review_results/sensitivity/all_sensitivity_predictions.csv` (663 = 13 × 51) |
+| Archive meta | `review_results/sensitivity/meta.json` |
 | Findings | `review_notes/05_sensitivity_findings.md` |
+
+**Archive note:** An earlier aggregate MAE file listed only the three capacity rows. It now lists all 13 completed sensitivity configurations. HELECAR-D `results/` and paper configs remain unchanged.
 
 ---
 
@@ -233,8 +240,10 @@ Stable under ±2×; do not retune.
 | Tesla `dt` not rebuilt after row drops / convention mismatch | High | Forward intervals + integrity tests |
 | Twizy 200 kW “absurd” threshold on Tesla | Medium | Tesla-aware 400 kW diagnostic; peaks logged |
 | Negative trip energies | Medium | Documented; trips retained |
-| Outdated “branch not pushed” notes | Low | Updated in `00_baseline_protection.md` / status notes |
+| Outdated “branch not pushed” notes | Low | Resolved: review branch pushed through `3b53bc4` |
+| Aggregate sensitivity MAE incomplete (3/13) | Low (archive) | Rebuilt `all_sensitivity_mae.csv` + predictions + `meta.json` (13/13) |
 | Ablation mixed MAE effects | Scientific | Interpreted honestly; no cherry-picking |
+| Manuscript Eq. (17) says “three” terms | Editorial | Four-term objective in code; fix planned in `07_camera_ready_section_plan.md` (docx not edited) |
 
 **Incomplete / unsuitable for publication as primary claims:**
 - Preliminary Tesla `tesla_bev*_loto` (leaky L, seed 0).
@@ -291,11 +300,12 @@ Use the **corrected** V×I table in §3.3. Require “feature-adapted” languag
 
 ## 8. Remaining risks before 15 Nov
 
-1. Corrected Tesla code/results are largely **local uncommitted** relative to pushed `c301072` — commit/push review branch before relying on remote reproducibility.
+1. Pushed review evidence is frozen at **`3b53bc4`**. Local post-push archive refresh: complete 13-row sensitivity aggregates (`all_sensitivity_*.csv`, `meta.json`) — commit when authors request; scientific conclusions unchanged.
 2. Repository is **public** — confirm visibility policy for review artifacts.
-3. Springer page budget: prefer ablation + sensitivity sentences; add Tesla only if space allows without cutting core contribution.
+3. Springer page budget (≤15 pp incl. refs): prefer ablation + sensitivity; add Tesla only after condensation (see page ledger in `07_camera_ready_section_plan.md`).
 4. Capacity MAE shifts with label scale — easy to misread as “accuracy”; wording must stay careful.
 5. Negative Tesla predictions may draw reviewer questions — answer with diagnostics, not censorship.
+6. Manuscript still states a **three-term** Eq. (17) while the implementation uses **four** terms including residual prior — must be corrected in camera-ready text.
 
 ---
 
@@ -308,7 +318,8 @@ Use the **corrected** V×I table in §3.3. Require “feature-adapted” languag
 | Include Tesla subsection? | **Yes, if space** — corrected numbers only |
 | Change accepted L=4 or λ defaults? | **No** |
 | Retrain ablations? | **No** |
-| Edit manuscript in this agent pass? | **No** (stopped after audit, as requested) |
+| Edit manuscript docx in this pass? | **No** — plan only (`07_camera_ready_section_plan.md`) |
+| Authoritative Tesla profiles? | **Only** `*_loto_corrected` |
 
 ---
 
@@ -318,5 +329,8 @@ Use the **corrected** V×I table in §3.3. Require “feature-adapted” languag
 - Ablation paired: `review_results/ablations/table_ablation_paired_complete.csv`
 - Tesla corrected summaries: `review_results/tesla/loto/tesla_bev*_loto_corrected/summary_vs_{meas,soc}.csv`
 - Tesla paired: `review_results/tesla/paired_pinn_vs_mlp_corrected.json`
-- Sensitivity: `review_results/sensitivity/summary_*.csv`
+- Sensitivity summaries: `review_results/sensitivity/summary_*.csv`
+- Sensitivity archive (13 configs): `review_results/sensitivity/all_sensitivity_mae.csv`, `all_sensitivity_predictions.csv`, `meta.json`
+- Section plan: `review_notes/07_camera_ready_section_plan.md`
 - Freeze notes: `review_notes/06_freeze_manifest.md`
+- Loss implementation (four terms): `src/training/losses.py` (`L_window`, `L_dynamics`, `L_state`, `L_prior`)

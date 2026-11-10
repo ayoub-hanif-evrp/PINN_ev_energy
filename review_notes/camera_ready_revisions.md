@@ -3,7 +3,8 @@
 Apply manually to the Springer manuscript. Do **not** auto-merge into `main`.  
 Original HELECAR-D tables in `results/` remain the primary result.
 
-Branch `review/intis2026-validation` is on GitHub; the repo is currently public.
+Branch `review/intis2026-validation` @ `3b53bc4` is on GitHub; the repo is currently public.  
+**Exact section-by-section plan (replace / condense / add + page impact):** `review_notes/07_camera_ready_section_plan.md`.
 
 ---
 
