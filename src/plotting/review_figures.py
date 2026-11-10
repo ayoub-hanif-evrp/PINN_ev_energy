@@ -263,10 +263,23 @@ def fig_sensitivity_L(frame: pd.DataFrame, path: Path) -> dict[str, Path]:
             zorder=3,
             label="Reference (L = 4 kW)" if is_ref else None,
         )
+        # Place labels above points; shift L=8 slightly left to avoid the edge.
+        x_off = -6 if int(row["L_kW"]) == 8 else 0
+        ax.annotate(
+            f"{row['mae_kwh']:.3f}",
+            (row["L_kW"], row["mae_kwh"]),
+            textcoords="offset points",
+            xytext=(x_off, 10),
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            color="0.15",
+            annotation_clip=False,
+        )
     ax.set_xlabel("Residual bound L (kW)")
     ax.set_ylabel("Trip-energy MAE (kWh)")
     ax.set_xticks([2, 4, 6, 8])
-    ax.set_ylim(float(mae.min()) - 0.04, float(mae.max()) + 0.04)
+    ax.set_ylim(float(mae.min()) - 0.04, float(mae.max()) + 0.055)
     ax.legend(loc="upper left", frameon=True, fontsize=9)
     ax.grid(True, axis="both", alpha=0.25)
     fig.tight_layout()
